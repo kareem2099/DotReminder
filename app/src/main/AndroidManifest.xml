@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Support for different screen sizes and orientations -->
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true"
+        android:anyDensity="true"
+        android:requiresSmallestWidthDp="320"
+        android:compatibleWidthLimitDp="10000"
+        android:largestWidthLimitDp="10000" />
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" /> <!-- Required for SIM card country code detection -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- Added Coarse Location Permission -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- Added Fine Location Permission for geofencing -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="com.android.vending.CHECK_LICENSE" />
+    <!-- For older versions, if not using USE_EXACT_ALARM -->
+    <!-- <uses-permission android:name="android.permission.WAKE_LOCK" /> -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- Feature declarations for better device compatibility -->
+    <uses-feature
+        android:name="android.software.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.network"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen.multitouch"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
+
+    <application
+        android:name=".RemindMeApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RemindMeApp"
+        android:resizeableActivity="true"
+        android:configChanges="keyboardHidden|orientation|screenSize|uiMode"
+        android:screenOrientation="unspecified"
+        tools:targetApi="31">
+
+        <!-- Facebook SDK Configuration -->
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token" />
+
+        <!-- Google AdMob Configuration -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3186351063839089~6447242825" />
+
+        <!-- Google Maps API Configuration -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${GOOGLE_MAPS_API_KEY}" />
+
+        <!-- Catappult AppCoins Billing Configuration - REMOVED -->
+        <!-- Changed meta-data name -->
+        <!-- <meta-data
+            android:name="APPCOINS_BILLING_KEY"
+            android:value="${APPCOINS_BILLING_KEY_PLACEHOLDER}" /> -->
+        <!-- Removed wallet address meta-data -->
+        <!-- Removed old Aptoide BillingService declaration -->
+
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name"
+            android:exported="true" />
+
+        <provider
+            android:name="com.facebook.FacebookContentProvider"
+            android:authorities="com.facebook.app.FacebookContentProvider1715171592445158.com.FreeRave.remindme"
+            android:exported="true" />
+
+        <activity
+            android:name="com.facebook.CustomTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@string/fb_login_protocol_scheme" />
+            </intent-filter>
+        </activity>
+
+        <!-- Your app activities with improved compatibility -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.RemindMeApp"
+            android:resizeableActivity="true"
+            android:configChanges="keyboardHidden|orientation|screenSize|uiMode|screenLayout|smallestScreenSize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- SplashActivity is no longer the launcher -->
+        <activity
+            android:name="com.FreeRave.SplashActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RemindMeApp"
+            android:resizeableActivity="true" />
+
+
+
+        <!-- Google Sign-In Activity -->
+        <activity
+            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        
+        <activity
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <receiver
+            android:name=".utils.NotificationReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".utils.GeofenceBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.android.gms.location.ACTION_GEOFENCE_EVENT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".utils.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Location Notification Receiver -->
+        <receiver
+            android:name=".utils.LocationNotificationReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Geofence Event Service -->
+        <service
+            android:name=".service.GeofenceEventService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Boot Event Service -->
+        <service
+            android:name=".service.BootEventService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Quick Add Reminder Widget -->
+        <receiver
+            android:name=".widget.QuickAddWidgetProvider"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_widget_info" />
+        </receiver>
+
+        <!-- Upcoming Reminders Widget -->
+        <receiver
+            android:name=".widget.UpcomingRemindersWidgetProvider"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/upcoming_reminders_widget_info" />
+        </receiver>
+    </application>
+
+</manifest>

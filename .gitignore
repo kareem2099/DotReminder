@@ -1,0 +1,52 @@
+# Android Studio & IntelliJ
+.idea/
+.gradle/
+build/
+app/build/
+*.iml
+.cxx/
+local.properties
+
+# Secrets & Keys
+*.keystore
+*.jks
+google-services.json
+secrets.properties
+*.env
+
+# Linux & OS junk
+.DS_Store
+captures/
+output.json
+
+# Project specific logs
+error_log.txt
+log.txt
+kapt_debug_output.txt
+
+# Firebase & Local Tools
+.firebase/
+.firebaserc
+firebug.json
+todo_list.json
+
+# Generated
+.kotlin/
+.vscode/
+app/build/generated/
+*.class
+
+# Gradle
+gradle/wrapper/gradle-wrapper.jar
+
+# Release
+*.apk
+*.aab
+release/
+app/release/
+
+# Crash reports
+crashlytics-build.properties
+
+# gradle wrapper
+gradle/wrapper/gradle-wrapper.jar

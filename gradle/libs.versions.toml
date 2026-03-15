@@ -1,0 +1,128 @@
+[versions]
+agp = "9.1.0"
+datastorePreferences = "1.2.1"
+libphonenumber = "9.0.26"
+hilt = "2.59.2"
+firebaseBom = "34.10.0"
+#firebaseAuthKtx = "23.2.1"
+#firebaseFirestoreKtx = "25.1.4"
+kotlin = "2.3.10"
+lottie = "6.7.1"
+coreKtx = "1.18.0"
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+lifecycleRuntimeKtx = "2.10.0"
+lifecycle = "2.10.0"
+activityCompose = "1.13.0"
+composeBom = "2026.03.00"
+navigationCompose = "2.9.7"
+navigationUi = "2.9.7"
+coil = "2.7.0"
+playServicesAuth = "21.5.1"
+playServicesLocation = "21.3.0"
+playServicesIdentity = "18.1.0"
+playServicesAds = "25.0.0"
+playServicesMaps = "20.0.0"
+mapsKtx = "6.0.1"
+userMessagingPlatform = "4.0.0"
+facebookSdk = "18.1.3"
+kotlinxCoroutinesPlayServices = "1.10.2"
+googleServices = "4.4.4"
+androidx-biometric = "1.1.0"
+androidx-media3 = "1.9.2"
+zxing = "3.5.4"
+natty = "0.13"
+googleAiGenerativeAi = "0.9.0"
+accompanist = "0.36.0"
+androidxCoreSplashscreen = "1.2.0"
+javaxInject = "1"
+billingKtx = "8.3.0"
+retrofit = "3.0.0"
+okhttp = "5.3.2"
+moshi = "1.15.2"
+kotlinpoet = "2.2.0"
+kotlinx-metadata-jvm = "0.9.0"
+calendarCompose = "2.10.0"
+ksp = "2.3.6"
+gson = "2.13.2"
+countryPicker = "3.0.0"
+playAppUpdate = "2.1.0"
+ui = "1.10.5"
+
+[libraries]
+compose-calendar = { module = "com.kizitonwose.calendar:compose", version.ref = "calendarCompose" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+coil-svg = { module = "io.coil-kt:coil-svg", version.ref = "coil" }
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+play-services-identity = { module = "com.google.android.gms:play-services-identity", version.ref = "playServicesIdentity" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+maps-ktx = { module = "com.google.maps.android:maps-ktx", version.ref = "mapsKtx" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessagingPlatform" }
+facebook-android-sdk = { module = "com.facebook.android:facebook-android-sdk", version.ref = "facebookSdk" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-navigation-ui = { module = "androidx.navigation:navigation-ui", version.ref = "navigationUi" }
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycle" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material = { group = "androidx.compose.material", name = "material" }
+androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.3.0" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "androidx-biometric" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+natty = { group = "com.joestelmach", name = "natty", version.ref = "natty" }
+google-ai-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "googleAiGenerativeAi" }
+accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist" }
+javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billingKtx" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidxCoreSplashscreen" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
+moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
+moshi-codegen = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshi" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+kotlinx-metadata-jvm = { module = "org.jetbrains.kotlinx:kotlinx-metadata-jvm", version.ref = "kotlinx-metadata-jvm" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "androidx-media3" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "androidx-media3" }
+androidx-media3-common = { group = "androidx.media3", name = "media3-common", version.ref = "androidx-media3" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+country-picker-compose = { module = "com.github.arpitkatiyar1999:Country-Picker", version.ref = "countryPicker" }
+play-app-update = { module = "com.google.android.play:app-update", version.ref = "playAppUpdate" }
+play-app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
+foundation-layout = { module = "androidx.compose.foundation:foundation-layout" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+#kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+#kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

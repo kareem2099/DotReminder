@@ -22,6 +22,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import com.FreeRave.remindme.service.SessionRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -79,5 +80,14 @@ class AppModule {
     @Singleton
     fun provideFacebookSignInOnlyService(): FacebookSignInOnlyService {
         return FacebookSignInOnlyServiceImpl()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSessionRepository(
+        firestore: FirebaseFirestore,
+        firebaseAuth: FirebaseAuth
+    ): SessionRepository {
+        return SessionRepository(firestore, firebaseAuth)
     }
 }

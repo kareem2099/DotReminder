@@ -49,6 +49,8 @@ gson = "2.13.2"
 countryPicker = "3.0.0"
 playAppUpdate = "2.1.0"
 ui = "1.10.5"
+appcompat = "1.7.1"
+
 
 [libraries]
 compose-calendar = { module = "com.kizitonwose.calendar:compose", version.ref = "calendarCompose" }
@@ -117,6 +119,7 @@ play-app-update = { module = "com.google.android.play:app-update", version.ref =
 play-app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 foundation-layout = { module = "androidx.compose.foundation:foundation-layout" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

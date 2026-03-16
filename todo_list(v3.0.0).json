@@ -1,0 +1,267 @@
+{
+  "project": "RemindMe - Gradle Migration & Bug Fixes",
+  "version": "0.0.3",
+  "last_updated": "2026-03-16",
+  "completed_tasks": [
+    {
+      "id": "migrate_agp_9",
+      "title": "Migrate to AGP 9.0.1",
+      "description": "Updated Android Gradle Plugin to 9.0.1 and resolved all breaking changes",
+      "status": "completed",
+      "files_modified": [
+        "gradle/libs.versions.toml",
+        "build.gradle.kts",
+        "app/build.gradle.kts"
+      ],
+      "changes": [
+        "Updated agp to 9.0.1",
+        "Removed kotlin-android plugin (no longer required since AGP 9.0)",
+        "Removed kotlin-compose plugin (built-in since AGP 9.0)",
+        "Removed kotlin-kapt plugin (not compatible with AGP 9.0 built-in Kotlin)",
+        "Removed kotlin-android and kotlin-kapt from project-level build.gradle.kts",
+        "Updated compileSdk to 36",
+        "Fixed ndkVersion by removing rc suffix",
+        "Fixed languageVersion from KOTLIN_2_2 to KOTLIN_2_1",
+        "Updated Java version from 11 to 17"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "migrate_kapt_to_ksp",
+      "title": "Migrate from kapt to KSP",
+      "description": "Replaced all kapt dependencies with KSP for better performance and AGP 9.0 compatibility",
+      "status": "completed",
+      "files_modified": [
+        "app/build.gradle.kts",
+        "gradle/libs.versions.toml"
+      ],
+      "changes": [
+        "Replaced kapt(libs.hilt.compiler) with ksp(libs.hilt.compiler)",
+        "Replaced kaptAndroidTest(libs.hilt.compiler) with kspAndroidTest(libs.hilt.compiler)",
+        "Updated KSP version to 2.3.1 (first version compatible with AGP 9.0)",
+        "Fixed hilt-android library declaration (was using plugin syntax instead of library syntax)",
+        "Removed kotlin('kapt') plugin from app/build.gradle.kts",
+        "Added android.disallowKotlinSourceSets=false to gradle.properties"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "fix_hilt_navigation_import",
+      "title": "Fix hiltViewModel Import",
+      "description": "Updated all hiltViewModel imports to use the correct non-deprecated package",
+      "status": "completed",
+      "files_modified": [
+        "app/src/main/java/com/FreeRave/remindme/screens/calendar/CalendarScreen.kt",
+        "app/src/main/java/com/FreeRave/remindme/screens/category/CategoriesScreen.kt",
+        "app/src/main/java/com/FreeRave/remindme/screens/settings/AccountSecurityScreen.kt"
+      ],
+      "changes": [
+        "Replaced deprecated import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel",
+        "Updated to androidx.hilt.navigation.compose.hiltViewModel",
+        "Downgraded hilt-navigation-compose to 1.2.0 to fix deprecation warning"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "fix_categories_screen_crash",
+      "title": "Fix CategoriesScreen Crash (Nested Scroll)",
+      "description": "Fixed IllegalStateException caused by LazyColumn inside AdaptiveColumn with verticalScroll",
+      "status": "completed",
+      "files_modified": [
+        "app/src/main/java/com/FreeRave/remindme/screens/category/CategoriesScreen.kt"
+      ],
+      "changes": [
+        "Removed AdaptiveColumn wrapper that was causing nested scroll conflict",
+        "Replaced with LazyColumn directly inside AdaptiveContainer",
+        "Added fillMaxSize() modifier to LazyColumn",
+        "Improved ResponsiveCategoryItem with Card wrapper for better UI",
+        "Added description field display in category items",
+        "Fixed import from deprecated hiltViewModel package"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "fix_account_security_screen_crash",
+      "title": "Fix AccountSecurityScreen Crash (Nested Scroll)",
+      "description": "Fixed IllegalStateException caused by verticalScroll inside AdaptiveColumn inside AdaptiveFormContainer",
+      "status": "completed",
+      "files_modified": [
+        "app/src/main/java/com/FreeRave/remindme/screens/settings/AccountSecurityScreen.kt"
+      ],
+      "changes": [
+        "Removed AdaptiveColumn and AdaptiveFormContainer wrappers",
+        "Replaced with single Column with verticalScroll directly inside AdaptiveContainer",
+        "Added horizontal padding to Column instead of nested containers",
+        "Maintained all 2FA, biometric, and password change functionality",
+        "Fixed import from deprecated hiltViewModel package"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "fix_biometric_activity",
+      "title": "Fix Biometric 'FragmentActivity not found' Error",
+      "description": "Fixed biometric authentication failure caused by MainActivity inheriting from ComponentActivity instead of AppCompatActivity",
+      "status": "completed",
+      "files_modified": [
+        "app/src/main/java/com/FreeRave/remindme/MainActivity.kt",
+        "gradle/libs.versions.toml",
+        "app/build.gradle.kts"
+      ],
+      "changes": [
+        "Changed MainActivity to inherit from AppCompatActivity instead of ComponentActivity",
+        "Added androidx.appcompat:appcompat:1.7.0 dependency",
+        "Added appcompat version and library entry in libs.versions.toml",
+        "AppCompatActivity extends FragmentActivity which BiometricPrompt requires",
+        "LocalActivity.current as? FragmentActivity now returns correctly"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "setup_github_repo",
+      "title": "Setup Clean Public GitHub Repository",
+      "description": "Created a clean public GitHub repository with proper .gitignore and no sensitive files",
+      "status": "completed",
+      "files_modified": [
+        ".gitignore"
+      ],
+      "changes": [
+        "Created comprehensive .gitignore covering Android, secrets, generated files",
+        "Added .kotlin/, .vscode/, .firebaserc to .gitignore",
+        "Added app/release/ to .gitignore",
+        "Removed gradle-wrapper.jar from tracking",
+        "Removed app-release.aab from git tracking",
+        "Verified no API keys or secrets in tracked files",
+        "Initialized fresh git repository with clean history",
+        "Added proper GitHub repository topics and description",
+        "Pushed to https://github.com/kareem2099/DotReminder.git"
+      ],
+      "completion_date": "2026-03-16"
+    },
+    {
+      "id": "implement_active_sessions",
+      "title": "Implement Real Active Sessions Feature",
+      "description": "Replaced mock sessions with real Firestore-backed session tracking including save, display, and sign out",
+      "status": "completed",
+      "files_modified": [
+        "app/src/main/java/com/FreeRave/remindme/model/Session.kt",
+        "app/src/main/java/com/FreeRave/remindme/service/SessionRepository.kt",
+        "app/src/main/java/com/FreeRave/remindme/screens/settings/ActiveSessionsViewModel.kt",
+        "app/src/main/java/com/FreeRave/remindme/screens/settings/ActiveSessionsScreen.kt",
+        "app/src/main/java/com/FreeRave/remindme/data/UserPreferencesRepository.kt",
+        "app/src/main/java/com/FreeRave/remindme/di/AppModule.kt",
+        "app/src/main/java/com/FreeRave/remindme/screens/auth/AuthViewModel.kt"
+      ],
+      "changes": [
+        "Created Session.kt model with deviceName, deviceModel, loginTime, lastActive fields",
+        "Created SessionRepository.kt with Firestore CRUD operations and real-time Flow",
+        "Created ActiveSessionsViewModel.kt with loadSessions, signOutSession, signOutAllOtherSessions",
+        "Replaced mock ActiveSessionsScreen with real UI showing live Firestore sessions",
+        "Added CURRENT_SESSION_ID key to UserPreferencesRepository DataStore",
+        "Added provideSessionRepository() to AppModule",
+        "Added SessionRepository dependency to AuthViewModel constructor",
+        "Added saveSession() function called after every successful login (email, Google, Facebook)",
+        "Sessions stored under users/{userId}/sessions/{sessionId} in Firestore",
+        "Fixed Firestore Rules to allow read/write on sessions subcollection",
+        "Current device highlighted with primaryContainer color and 'This device' badge",
+        "Sign Out button disabled for current session",
+        "Sign Out All Other Devices button disabled when only one session exists"
+      ],
+      "completion_date": "2026-03-16"
+    }
+  ],
+  "gradle_migration_summary": {
+    "from": {
+      "agp": "8.x",
+      "kotlin": "2.1.x",
+      "ksp": "2.2.21-2.0.4",
+      "annotation_processor": "kapt"
+    },
+    "to": {
+      "agp": "9.0.1",
+      "kotlin": "2.3.10",
+      "ksp": "2.3.1",
+      "annotation_processor": "ksp"
+    },
+    "key_breaking_changes": [
+      "kotlin-android plugin removed (built-in since AGP 9.0)",
+      "kotlin-compose plugin removed (built-in since AGP 9.0)",
+      "kapt replaced with ksp for all annotation processing",
+      "android.disallowKotlinSourceSets=false required in gradle.properties",
+      "hiltViewModel import moved to androidx.hilt.navigation.compose"
+    ]
+  },
+  "bug_fixes_summary": [
+    {
+      "bug": "CategoriesScreen crash on open",
+      "cause": "LazyColumn inside AdaptiveColumn with verticalScroll (nested scroll)",
+      "fix": "Replaced AdaptiveColumn with direct LazyColumn inside AdaptiveContainer"
+    },
+    {
+      "bug": "AccountSecurityScreen crash on open",
+      "cause": "Column with verticalScroll inside AdaptiveColumn inside AdaptiveFormContainer",
+      "fix": "Single Column with verticalScroll directly inside AdaptiveContainer"
+    },
+    {
+      "bug": "Biometric: FragmentActivity not found / Cannot perform biometric setup",
+      "cause": "MainActivity inherited from ComponentActivity which does not extend FragmentActivity",
+      "fix": "Changed MainActivity to inherit from AppCompatActivity which extends FragmentActivity"
+    },
+    {
+      "bug": "Active Sessions screen showing empty / mock data",
+      "cause": "Firestore Rules missing sessions subcollection permission + no real session saving logic",
+      "fix": "Added sessions rule under users/{userId}/sessions and implemented saveSession() in AuthViewModel"
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": "apply_responsive_remaining_screens",
+      "title": "Apply responsive design to remaining screens",
+      "description": "Use established pattern to update EditReminderScreen, TemplatesScreen, AiChatScreen, SupportScreen",
+      "status": "pending",
+      "priority": "medium"
+    },
+    {
+      "id": "calendar_feature",
+      "title": "Complete Calendar Feature",
+      "description": "Finish implementing the Calendar View feature with HorizontalCalendar library integration",
+      "status": "in_progress",
+      "priority": "high",
+      "notes": "CalendarScreen.kt and CalendarViewModel.kt created but not fully integrated"
+    },
+    {
+      "id": "change_password_real_impl",
+      "title": "Implement Real Change Password Logic",
+      "description": "Replace mock changePassword() in AuthViewModel with real Firebase re-authentication and password update",
+      "status": "pending",
+      "priority": "high",
+      "notes": "Currently returns mock success. Needs reauthenticateUser() then updatePassword() via Firebase"
+    },
+    {
+      "id": "advanced_responsive_features",
+      "title": "Add advanced responsive features",
+      "description": "Implement two-pane layouts for suitable screens and enhanced tablet experiences",
+      "status": "pending",
+      "priority": "low"
+    },
+    {
+      "id": "write_unit_tests",
+      "title": "Write Unit Tests",
+      "description": "Add unit tests for ViewModels and service layer",
+      "status": "pending",
+      "priority": "medium"
+    }
+  ],
+  "testing_requirements": [
+    "Test Categories screen opens without crash",
+    "Test Account Security screen opens without crash",
+    "Test biometric enable/disable flow",
+    "Test 2FA setup and disable flow",
+    "Test change password flow",
+    "Verify Gradle sync works on fresh clone",
+    "Test build on AGP 9.0.1 with KSP",
+    "Test Active Sessions shows current device after login",
+    "Test Sign Out single session removes it from Firestore",
+    "Test Sign Out All Other Devices keeps only current session",
+    "Test session saved correctly for email, Google, and Facebook login"
+  ]
+}

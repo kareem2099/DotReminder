@@ -24,6 +24,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.FreeRave.remindme.model.Session
+import com.FreeRave.remindme.service.SessionRepository
+import java.util.UUID
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -34,6 +37,7 @@ class AuthViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val biometricAuthManager: BiometricAuthManager, // Injected BiometricAuthManager
     val verificationService: VerificationService,
+    private val sessionRepository: SessionRepository,
     @ApplicationContext private val applicationContext: Context // Injected ApplicationContext
 ) : ViewModel() {
 
@@ -96,6 +100,7 @@ class AuthViewModel @Inject constructor(
                     provider = authProvider
                 )
                 _loginState.value = LoginState.Success(user)
+
             } else {
                 // No user logged in, _loginState remains Idle (or set explicitly if needed)
                 // _loginState.value = LoginState.Idle
@@ -191,6 +196,7 @@ class AuthViewModel @Inject constructor(
                         }
                         // If !rememberMeEnabled, saveRememberMeEnabled(false) would have already cleared the email
                         _loginState.value = LoginState.Success(user)
+                        saveSession()
                     }
                 },
                 onFailure = { e: Exception ->
@@ -216,6 +222,7 @@ class AuthViewModel @Inject constructor(
                             userPreferencesRepository.saveRememberedEmail(firebaseUser.email)
                         }
                         _loginState.value = LoginState.Success(firebaseUser)
+                        saveSession()
                     }
                 },
                 onFailure = { exception ->
@@ -267,6 +274,7 @@ class AuthViewModel @Inject constructor(
                         userPreferencesRepository.saveRememberedEmail(user.email)
                     }
                     _loginState.value = LoginState.Success(user)
+                    saveSession()
                 }
             },
             onError = { errorMsg ->
@@ -409,5 +417,13 @@ class AuthViewModel @Inject constructor(
         object Loading : ChangePasswordState()
         data class Success(val message: String) : ChangePasswordState()
         data class Error(val message: String) : ChangePasswordState()
+    }
+
+    private fun saveSession() {
+        viewModelScope.launch {
+            val sessionId = UUID.randomUUID().toString()
+            userPreferencesRepository.saveCurrentSessionId(sessionId)
+            sessionRepository.saveSession(Session.createForCurrentDevice(sessionId))
+        }
     }
 }

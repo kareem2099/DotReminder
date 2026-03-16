@@ -1,0 +1,98 @@
+{
+  "project": "RemindMe",
+  "app_version": "0.0.4",
+  "tracker_version": "3.2.0",
+  "last_updated": "2026-03-16",
+  "previous_version": "0.0.3",
+  "versionCode": 5,
+
+  "completed_in_v0.0.3": [
+    "Migrate to AGP 9.0.1",
+    "Migrate from kapt to KSP",
+    "Fix hiltViewModel deprecated import",
+    "Fix CategoriesScreen crash (nested scroll)",
+    "Fix AccountSecurityScreen crash (nested scroll)",
+    "Fix Biometric FragmentActivity not found (AppCompatActivity)",
+    "Setup clean public GitHub repository",
+    "Implement real Active Sessions with Firestore",
+    "Fix Firestore Rules for sessions subcollection"
+  ],
+
+  "todo_v0.0.4": [
+    {
+      "id": "change_password_real_impl",
+      "title": "Implement Real Change Password",
+      "description": "Replace mock changePassword() in AuthViewModel with real Firebase re-authentication and password update",
+      "status": "pending",
+      "priority": "high",
+      "notes": "Needs reauthenticateUser() then updatePassword() via Firebase",
+      "files_to_modify": [
+        "screens/auth/AuthViewModel.kt",
+        "service/FirebaseAuthServiceInterface.kt",
+        "service/FirebaseAuthServiceImpl.kt"
+      ]
+    },
+    {
+      "id": "calendar_feature",
+      "title": "Complete Calendar Feature",
+      "description": "Finish implementing the Calendar View with HorizontalCalendar library integration",
+      "status": "in_progress",
+      "priority": "high",
+      "notes": "CalendarScreen.kt and CalendarViewModel.kt created but not fully integrated",
+      "files_to_modify": [
+        "screens/calendar/CalendarScreen.kt",
+        "screens/calendar/CalendarViewModel.kt",
+        "navigation/AppNavGraph.kt"
+      ]
+    },
+    {
+      "id": "apply_responsive_remaining_screens",
+      "title": "Apply Responsive Design to Remaining Screens",
+      "description": "Use established AdaptiveContainer pattern to update remaining screens",
+      "status": "pending",
+      "priority": "medium",
+      "files_to_modify": [
+        "screens/edit/EditReminderScreen.kt",
+        "screens/templates/TemplatesScreen.kt",
+        "screens/ai/AiChatScreen.kt",
+        "screens/support/SupportScreen.kt"
+      ]
+    },
+    {
+      "id": "advanced_responsive_features",
+      "title": "Add Advanced Responsive Features",
+      "description": "Implement two-pane layouts for tablets and enhanced large screen experiences",
+      "status": "pending",
+      "priority": "low",
+      "files_to_modify": [
+        "ui/layout/AdaptiveLayouts.kt"
+      ]
+    },
+    {
+      "id": "write_unit_tests",
+      "title": "Write Unit Tests",
+      "description": "Add unit tests for ViewModels and service layer",
+      "status": "pending",
+      "priority": "medium",
+      "files_to_modify": [
+        "test/AuthViewModelTest.kt",
+        "test/SessionRepositoryTest.kt",
+        "test/SettingsViewModelTest.kt"
+      ]
+    }
+  ],
+
+  "testing_checklist_v0.0.4": [
+    "Test change password with correct current password",
+    "Test change password with wrong current password",
+    "Test calendar screen opens without crash",
+    "Test calendar shows reminders on correct dates",
+    "Test EditReminderScreen responsive layout on tablet",
+    "Test TemplatesScreen responsive layout on tablet",
+    "Test AiChatScreen responsive layout on tablet",
+    "Test SupportScreen responsive layout on tablet",
+    "Regression: Active Sessions still works after update",
+    "Regression: Biometric login still works after update",
+    "Regression: 2FA setup and disable still works"
+  ]
+}

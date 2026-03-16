@@ -1,168 +1,208 @@
 # RemindMe 📱
 
-A powerful, feature-rich reminder app built with Kotlin and Jetpack Compose for Android. Stay organized with smart reminders, location-based notifications, AI assistance, and customizable templates.
+> A powerful, feature-rich reminder app built with **Kotlin** and **Jetpack Compose**. Stay organized with smart reminders, location-based notifications, AI assistance, and full account security.
+
+[![Android](https://img.shields.io/badge/Platform-Android-green.svg)](https://android.com)
+[![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-purple.svg)](https://developer.android.com/jetpack/compose)
+[![Firebase](https://img.shields.io/badge/Backend-Firebase-orange.svg)](https://firebase.google.com)
+[![Version](https://img.shields.io/badge/Version-0.0.4-brightgreen.svg)](https://github.com/kareem2099/DotReminder)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+---
+
+## 📸 Screenshots
+
+> Coming soon
+
+---
 
 ## ✨ Features
 
 ### 🔔 Core Reminder Features
-- **Time-based Reminders** - Set reminders for specific dates and times
-- **Recurring Reminders** - Daily, weekly, monthly, and custom recurrence patterns
-- **Location-based Reminders** - Get notified when you arrive at or leave specific locations
-- **Smart Notifications** - Customizable notification sounds and priority levels
+- **Time-based Reminders** — Set reminders for specific dates and times
+- **Recurring Reminders** — Daily, weekly, monthly, and custom recurrence patterns
+- **Location-based Reminders** — Get notified when you arrive at or leave specific locations
+- **Smart Notifications** — Customizable notification sounds and priority levels
+- **Snooze & Dismiss** — Flexible snooze durations and swipe-to-dismiss actions
 
 ### 🎨 Customization & Organization
-- **Custom Categories** - Create personalized categories with custom colors and icons
-- **Multiple Themes** - Choose from various themes including Ocean Blue, Forest Green, Sunset Orange, Midnight Purple, and Candy themes
-- **Reminder Templates** - Save frequently used reminder configurations for quick reuse
+- **Custom Categories** — Create personalized categories with custom colors and icons
+- **Multiple Themes** — Ocean Blue, Forest Green, Sunset Orange, Midnight Purple, and Candy
+- **Dark Mode** — Automatic and manual dark mode support
+- **Reminder Templates** — Save frequently used reminder configurations for quick reuse
 
 ### 🤖 AI-Powered Features
-- **AI Assistant Chat** - Natural language processing for creating and managing reminders
-- **Smart Suggestions** - AI-powered recommendations based on your reminder patterns
-- **Voice Commands** - Hands-free reminder creation and management
+- **AI Assistant Chat** — Natural language processing for creating and managing reminders
+- **Smart Suggestions** — AI-powered recommendations based on your reminder patterns
 
 ### 📱 Widgets & Quick Access
-- **Quick Add Widget** - 1x1 widget for instant reminder creation
-- **Upcoming Reminders Widget** - 2x2 widget showing your next reminders with quick edit access
-- **Home Screen Integration** - Seamless integration with Android home screen
+- **Quick Add Widget** (1×1) — Instant reminder creation from home screen
+- **Upcoming Reminders Widget** (2×2) — View your next reminders with quick edit access
 
 ### 🔐 Security & Authentication
-- **Multi-provider Authentication** - Sign in with Email, Google, or Facebook
-- **Biometric Authentication** - Fingerprint and face unlock support
-- **Account Security** - Active session management and security settings
+- **Multi-provider Authentication** — Email, Google, and Facebook sign-in
+- **Biometric Authentication** — Fingerprint and face unlock support
+- **Two-Factor Authentication (2FA)** — TOTP-based with backup codes
+- **Active Session Management** — View and sign out devices remotely
+- **Account Security Settings** — Full control over your account security
 
-### 🌟 Additional Features
-- **Search & Filter** - Quickly find reminders with powerful search and category filtering
-- **Pull-to-Refresh** - Stay up-to-date with manual refresh capability
-- **Swipe Actions** - Quick delete and edit with intuitive swipe gestures
-- **Backup & Sync** - Cloud synchronization across devices
-- **Dark Mode Support** - Automatic and manual dark mode options
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Android Studio Arctic Fox or later
-- Minimum Android SDK: API 24 (Android 7.0)
-- Target Android SDK: API 34 (Android 14)
+- Android Studio Hedgehog or later
+- Minimum Android SDK: **API 29** (Android 10)
+- Target Android SDK: **API 35** (Android 14)
+- JDK 17
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/RemindMe.git
-   cd RemindMe
-   ```
+**1. Clone the repository**
+```bash
+git clone https://github.com/kareem2099/DotReminder.git
+cd DotReminder
+```
 
-2. **Open in Android Studio**
-   - Launch Android Studio
-   - Select "Open an existing Android Studio project"
-   - Navigate to the cloned directory and select it
+**2. Configure Firebase**
+- Create a project at [Firebase Console](https://console.firebase.google.com/)
+- Add your Android app (`com.FreeRave.remindme`)
+- Download `google-services.json` → place in `app/`
+- Enable **Authentication** (Email, Google, Facebook) and **Firestore**
 
-3. **Configure Firebase**
-   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Add your Android app to the project
-   - Download `google-services.json` and place it in `app/src/main/`
-   - Enable Authentication and Firestore in Firebase Console
+**3. Configure API Keys**
 
-4. **Configure API Keys**
-   - Add your Facebook App ID and Client Token to `strings.xml`
-   - Configure Google Gemini API key for AI features
-   - Set up AdMob for monetization (optional)
+Create `local.properties` and add:
+```properties
+GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_MAPS_API_KEY=your_maps_api_key
+LLM_API_URL=your_llm_url
+LLM_MODEL_NAME=your_model_name
+BANNER_AD_UNIT_ID=your_banner_id
+INTERSTITIAL_AD_UNIT_ID=your_interstitial_id
+APP_OPEN_AD_UNIT_ID=your_app_open_id
+REWARDED_AD_UNIT_ID=your_rewarded_id
+```
 
-5. **Build and Run**
-   ```bash
-   ./gradlew build
-   ./gradlew installDebug
-   ```
+**4. Configure Release Signing**
 
-## 📱 Usage
+Create `gradle.properties` (never commit this):
+```properties
+MYAPP_RELEASE_STORE_FILE=/path/to/your/keystore.jks
+MYAPP_RELEASE_STORE_PASSWORD=your_store_password
+MYAPP_RELEASE_KEY_ALIAS=your_key_alias
+MYAPP_RELEASE_KEY_PASSWORD=your_key_password
+```
 
-### Creating Reminders
-1. Tap the **"Add Reminder"** button on the home screen
-2. Fill in reminder details:
-   - Title and description
-   - Date and time
-   - Category selection
-   - Recurrence options
-   - Location settings (optional)
-3. Save your reminder
+**5. Configure Firestore Rules**
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /sessions/{sessionId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    match /reminders/{reminderId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    match /categories/{categoryId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    match /reminder_templates/{templateId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}
+```
 
-### Using Templates
-1. Access templates from the **"Use Template"** button in Add Reminder
-2. Browse your saved templates
-3. Select a template to pre-fill reminder fields
-4. Customize as needed and save
+**6. Build and Run**
+```bash
+./gradlew build
+./gradlew installDebug
+```
 
-### Managing Categories
-1. Go to **Menu → Categories** from the home screen
-2. Create new categories with custom colors and icons
-3. Edit or delete existing categories
-4. Categories appear in reminder filters and creation
-
-### Widgets Setup
-1. Long-press on your home screen
-2. Select **"Widgets"**
-3. Find **"RemindMe"** widgets
-4. Drag widgets to your home screen:
-   - **Quick Add Widget**: Instant reminder creation
-   - **Upcoming Reminders Widget**: View and edit next reminders
+---
 
 ## 🏗️ Architecture
 
 ### Tech Stack
-- **Language**: Kotlin
-- **UI Framework**: Jetpack Compose
-- **Architecture**: MVVM with Repository pattern
-- **Dependency Injection**: Hilt (Dagger)
-- **Database**: Firebase Firestore
-- **Authentication**: Firebase Auth + Social providers
-- **Background Tasks**: WorkManager
-- **Location Services**: Google Play Services Location
+
+| Layer | Technology |
+|-------|-----------|
+| Language | Kotlin 2.3 |
+| UI | Jetpack Compose + Material 3 |
+| Architecture | MVVM + Repository Pattern |
+| DI | Hilt (Dagger) + KSP |
+| Database | Firebase Firestore |
+| Auth | Firebase Auth + Google + Facebook |
+| Local Storage | DataStore Preferences |
+| Location | Google Play Services Location + Geofencing |
+| AI | Google Gemini |
+| Build | AGP 9.1 + KSP |
 
 ### Project Structure
 ```
 app/src/main/java/com/FreeRave/remindme/
-├── data/           # Data layer (repositories, preferences)
-├── di/             # Dependency injection modules
-├── model/          # Data models
-├── navigation/     # Navigation components
-├── screens/        # UI screens and ViewModels
-├── service/        # Business logic services
-├── ui/             # UI components and themes
-├── utils/          # Utility classes
-└── widget/         # Android widgets
+├── data/           # DataStore preferences & repositories
+├── di/             # Hilt dependency injection modules
+├── model/          # Data models (Reminder, User, Session, etc.)
+├── navigation/     # NavGraph & Screen routes
+├── screens/        # UI screens & ViewModels
+│   ├── auth/       # Login, SignUp, VerifyEmail
+│   ├── home/       # Home screen
+│   ├── add/        # Add reminder
+│   ├── edit/       # Edit reminder
+│   ├── calendar/   # Calendar view
+│   ├── category/   # Categories management
+│   ├── templates/  # Reminder templates
+│   ├── ai/         # AI chat assistant
+│   ├── settings/   # Settings & security screens
+│   └── support/    # Support screen
+├── service/        # Business logic & Firebase services
+├── ui/             # Shared components, themes, responsive utils
+├── utils/          # Notifications, location, NLP utils
+└── widget/         # Home screen widgets
 ```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes
-4. Run tests: `./gradlew test`
-5. Submit a pull request
-
-## 📝 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and version history.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with ❤️ using modern Android development practices
-- Special thanks to the Android and Kotlin communities
-- Icons and assets from Material Design Icons
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/RemindMe/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/RemindMe/discussions)
-- **Email**: support@remindme.app
 
 ---
 
-**Stay organized, stay reminded!** 🎯
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'feat: add amazing feature'`
+4. Push: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/kareem2099/DotReminder/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kareem2099/DotReminder/discussions)
+
+---
+
+<p align="center">Built with ❤️ using modern Android development • <strong>Stay organized, stay reminded! 🎯</strong></p>

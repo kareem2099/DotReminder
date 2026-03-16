@@ -46,7 +46,6 @@ fun CategoriesScreen(
                     IconButton(onClick = { showAddDialog = true }) {
                         Text("+")
                     }
-
                     if (showAddDialog) {
                         CategoryDialog(
                             onDismiss = { showAddDialog = false },
@@ -70,25 +69,22 @@ fun CategoriesScreen(
             )
         }
     ) { paddingValues ->
-        AdaptiveContainer { windowSizeClass, containerModifier ->
-            AdaptiveColumn(
-                modifier = containerModifier.padding(paddingValues),
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally
+        AdaptiveContainer { _, containerModifier ->
+            // ✅ LazyColumn مباشرة بدل AdaptiveColumn عشان نتجنب nested scroll
+            LazyColumn(
+                modifier = containerModifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(getResponsivePadding(16.dp)),
+                verticalArrangement = Arrangement.spacedBy(getResponsiveSpacing(12.dp))
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(getResponsivePadding(16.dp)),
-                    verticalArrangement = Arrangement.spacedBy(getResponsiveSpacing(12.dp))
-                ) {
-                    items(allCategories) { category ->
-                        ResponsiveCategoryItem(
-                            category = category,
-                            onEditClick = { selectedCategoryForEdit = category },
-                            onDeleteClick = { selectedCategoryForDelete = category },
-                            categoryColors = viewModel.categoryColors
-                        )
-                    }
+                items(allCategories) { category ->
+                    ResponsiveCategoryItem(
+                        category = category,
+                        onEditClick = { selectedCategoryForEdit = category },
+                        onDeleteClick = { selectedCategoryForDelete = category },
+                        categoryColors = viewModel.categoryColors
+                    )
                 }
             }
         }
@@ -103,7 +99,6 @@ fun CategoriesScreen(
                 coroutineScope.launch {
                     try {
                         val success = if (cat.isPredefined) {
-                            // Create a new custom category if editing a predefined one
                             viewModel.addCategory(name, colorHex, description, icon)
                         } else {
                             viewModel.updateCategory(
@@ -182,39 +177,61 @@ fun ResponsiveCategoryItem(
     onDeleteClick: () -> Unit,
     categoryColors: Map<String, androidx.compose.ui.graphics.Color>
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(getResponsivePadding(8.dp)),
-        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Box(
+        Row(
             modifier = Modifier
-                .size(getResponsiveSpacing(24.dp))
-                .background(
-                    color = categoryColors[category.name] ?: ComposeColor.Gray,
-                    shape = CircleShape
-                )
-        )
-        Spacer(modifier = Modifier.width(getResponsiveSpacing(16.dp)))
-        Text(text = category.name)
-        Spacer(modifier = Modifier.weight(1f))
-        Row {
-            Text(if (category.isPredefined) "Predefined" else "Custom", color = ComposeColor.Gray)
-            if (!category.isPredefined) { // Custom ones can be deleted
-                Spacer(modifier = Modifier.width(getResponsiveSpacing(8.dp)))
-                Text(
-                    "Delete",
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.clickable { onDeleteClick() }
-                )
-                Spacer(modifier = Modifier.width(getResponsiveSpacing(8.dp)))
-            }
-            Text(
-                "Edit",
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { onEditClick() }
+                .fillMaxWidth()
+                .padding(getResponsivePadding(12.dp)),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(getResponsiveSpacing(24.dp))
+                    .background(
+                        color = categoryColors[category.name] ?: ComposeColor.Gray,
+                        shape = CircleShape
+                    )
             )
+            Spacer(modifier = Modifier.width(getResponsiveSpacing(12.dp)))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = category.name,
+                    style = MaterialTheme.typography.titleSmall
+                )
+                if (category.description.isNotBlank()) {
+                    Text(
+                        text = category.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = if (category.isPredefined) "Predefined" else "Custom",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ComposeColor.Gray
+                )
+                Spacer(modifier = Modifier.width(getResponsiveSpacing(8.dp)))
+                if (!category.isPredefined) {
+                    Text(
+                        text = "Delete",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.clickable { onDeleteClick() }
+                    )
+                    Spacer(modifier = Modifier.width(getResponsiveSpacing(8.dp)))
+                }
+                Text(
+                    text = "Edit",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { onEditClick() }
+                )
+            }
         }
     }
 }
@@ -279,7 +296,6 @@ fun CategoryDialog(
             TextButton(
                 onClick = {
                     if (name.isBlank()) return@TextButton
-
                     isValidating = true
                     coroutineScope.launch {
                         val isValid = viewModel.validateCategoryName(name, category?.id)

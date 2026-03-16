@@ -30,8 +30,8 @@ android {
         applicationId = "com.FreeRave.remindme"
         minSdk = 29
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.0.3"
+        versionCode = 5
+        versionName = "0.0.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val geminiApiKey = getApiKey("GEMINI_API_KEY")
@@ -71,18 +71,18 @@ android {
 
     signingConfigs {
         create("release") {
-            val storeFileProp = project.findProperty("MYAPP_RELEASE_STORE_FILE")
-            val storePasswordProp = project.findProperty("MYAPP_RELEASE_STORE_PASSWORD")
-            val keyAliasProp = project.findProperty("MYAPP_RELEASE_KEY_ALIAS")
-            val keyPasswordProp = project.findProperty("MYAPP_RELEASE_KEY_PASSWORD")
+            val storeFilePath = getApiKey("MYAPP_RELEASE_STORE_FILE")
+            val storePass = getApiKey("MYAPP_RELEASE_STORE_PASSWORD")
+            val keyAlias = getApiKey("MYAPP_RELEASE_KEY_ALIAS")
+            val keyPass = getApiKey("MYAPP_RELEASE_KEY_PASSWORD")
 
-            if (storeFileProp != null && storePasswordProp != null && keyAliasProp != null && keyPasswordProp != null) {
-                storeFile = rootProject.file(storeFileProp.toString())
-                storePassword = storePasswordProp.toString()
-                keyAlias = keyAliasProp.toString()
-                keyPassword = keyPasswordProp.toString()
+            if (storeFilePath.isNotEmpty() && storePass.isNotEmpty() && keyAlias.isNotEmpty() && keyPass.isNotEmpty()) {
+                storeFile = rootProject.file(storeFilePath)
+                storePassword = storePass
+                this.keyAlias = keyAlias
+                keyPassword = keyPass
             } else {
-                println("WARNING: Missing release keystore properties in gradle.properties.")
+                println("WARNING: Missing release keystore properties in local.properties.")
             }
         }
     }
@@ -192,4 +192,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.androidx.appcompat)
 }

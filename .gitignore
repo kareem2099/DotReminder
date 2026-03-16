@@ -13,6 +13,7 @@ local.properties
 google-services.json
 secrets.properties
 *.env
+gradle.properties
 
 # Linux & OS junk
 .DS_Store

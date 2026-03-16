@@ -10,13 +10,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
@@ -45,9 +42,10 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.InstallStateUpdatedListener
+import androidx.appcompat.app.AppCompatActivity
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var facebookSignInOnlyService: FacebookSignInOnlyService

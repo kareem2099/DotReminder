@@ -34,6 +34,7 @@ class UserPreferencesRepository @Inject constructor(@ApplicationContext private 
         val SUNSET_ORANGE_ADS_WATCHED = intPreferencesKey("sunset_orange_ads_watched")
         val MIDNIGHT_PURPLE_ADS_WATCHED = intPreferencesKey("midnight_purple_ads_watched")
         val CANDY_ADS_WATCHED = intPreferencesKey("candy_ads_watched")
+        val CURRENT_SESSION_ID = stringPreferencesKey("current_session_id")
     }
 
     // --- Notification Sound ---
@@ -292,6 +293,24 @@ class UserPreferencesRepository @Inject constructor(@ApplicationContext private 
         }
     }
 
+    // --- Current Session ID ---
+    val currentSessionId: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.CURRENT_SESSION_ID]
+        }
+
+    suspend fun saveCurrentSessionId(sessionId: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.CURRENT_SESSION_ID] = sessionId
+        }
+    }
+
+    suspend fun clearCurrentSessionId() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.CURRENT_SESSION_ID)
+        }
+    }
+
     companion object {
         const val DEFAULT_SOUND_RESOURCE_NAME = "alarm_sound_1"
         val DEFAULT_THEME_SETTING = ThemeSetting.SYSTEM
@@ -302,6 +321,7 @@ class UserPreferencesRepository @Inject constructor(@ApplicationContext private 
         const val DEFAULT_BIOMETRIC_LOGIN_ENABLED = false // Added default
         const val DEFAULT_TWO_FACTOR_AUTH_ENABLED = false
         const val DEFAULT_APP_OPEN_ADS_ENABLED = true
+        const val DEFAULT_SESSION_ID = ""
     }
 }
 

@@ -8,6 +8,7 @@ import com.FreeRave.remindme.model.Reminder
 import com.FreeRave.remindme.utils.NotificationUtils
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
 import com.FreeRave.remindme.service.ReminderService
+import com.FreeRave.remindme.service.GeminiService 
 import com.FreeRave.remindme.utils.NLPUtils
 import com.FreeRave.remindme.utils.ParsedReminderInfo
 import com.FreeRave.remindme.utils.LocationHistoryEntry
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject 
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,7 +27,8 @@ class AddReminderViewModel @Inject constructor(
     private val application: Application,
     private val reminderService: ReminderService,
     private val authService: FirebaseAuthServiceInterface,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val geminiService: GeminiService
 ) : ViewModel() {
 
     private val _nlpInputText = MutableStateFlow("")
@@ -92,10 +95,9 @@ class AddReminderViewModel @Inject constructor(
         _reminderTimeMillis.update { millis }
     }
 
-    // Functions to manually update recurrence if UI controls are added later
     fun onIsRecurringChanged(isRec: Boolean) {
         _isRecurring.update { isRec }
-        if (!isRec) { // If not recurring, clear interval and end time
+        if (!isRec) {
             _recurrenceIntervalMillis.update { null }
             _recurrenceEndTime.update { null }
         }
@@ -141,7 +143,6 @@ class AddReminderViewModel @Inject constructor(
         _geofencePriority.update { priority }
     }
 
-    // Location history methods
     suspend fun getLocationHistory(): List<LocationHistoryEntry> {
         return try {
             val locationUtils = com.FreeRave.remindme.utils.LocationUtils(application.applicationContext)
@@ -164,27 +165,59 @@ class AddReminderViewModel @Inject constructor(
         }
     }
 
-
+    // 👇 The magic happens here: AI function with fallback mechanism
     fun parseNaturalLanguageInput() {
         val inputText = _nlpInputText.value
         if (inputText.isBlank()) {
             return
         }
-        viewModelScope.launch {
-            val parsedInfo: ParsedReminderInfo = NLPUtils.parseReminderText(inputText)
-            _title.update { parsedInfo.title }
-            _reminderTimeMillis.update { parsedInfo.reminderTime }
-            _isRecurring.update { parsedInfo.isRecurring }
-            _recurrenceIntervalMillis.update { parsedInfo.recurrenceIntervalMillis }
-            _recurrenceEndTime.update { parsedInfo.recurrenceEndTime }
 
-            // If it's recurring but no specific start time was parsed,
-            // and current reminderTimeMillis is null, set a default start time (e.g., now or soon).
-            if (parsedInfo.isRecurring && parsedInfo.reminderTime == null && _reminderTimeMillis.value == null) {
-                val defaultStartTime = System.currentTimeMillis() + (parsedInfo.recurrenceIntervalMillis ?: 60000L) // Default to interval or 1 min from now
-                 _reminderTimeMillis.update { defaultStartTime }
+        viewModelScope.launch {
+            try {
+                // Attempt to connect to Gemini 2.5 Flash
+                val jsonResponse = geminiService.parseReminderToJSON(inputText)
+
+                if (jsonResponse != null) {
+                    val jsonObject = JSONObject(jsonResponse)
+
+                    _title.update { jsonObject.optString("title", inputText) }
+
+                    if (jsonObject.has("reminderTime") && !jsonObject.isNull("reminderTime")) {
+                        _reminderTimeMillis.update { jsonObject.getLong("reminderTime") }
+                    }
+
+                    _isRecurring.update { jsonObject.optBoolean("isRecurring", false) }
+
+                    val detectedCategory = jsonObject.optString("category", "")
+                    if (detectedCategory.isNotBlank() && detectedCategory != "null") {
+                        _category.update { detectedCategory }
+                    }
+                } else {
+                    // Fallback: If AI returns null (e.g., network issue), use the old NLP
+                    fallbackToOfflineNLP(inputText)
+                }
+                } catch (e: Exception) {
+                    android.util.Log.e("AddReminderViewModel", "AI Parsing failed, falling back to NLPUtils", e)
+                    // Fallback: If any JSON error occurs, revert to the old NLP
+                    fallbackToOfflineNLP(inputText)
+            }
+
+            // If the event is recurring but no start time is set
+            if (_isRecurring.value && _reminderTimeMillis.value == null) {
+                val defaultStartTime = System.currentTimeMillis() + (_recurrenceIntervalMillis.value ?: 60000L)
+                _reminderTimeMillis.update { defaultStartTime }
             }
         }
+    }
+
+    // Helper function to avoid duplicating fallback code
+    private fun fallbackToOfflineNLP(inputText: String) {
+        val parsedInfo = NLPUtils.parseReminderText(inputText)
+        _title.update { parsedInfo.title }
+        _reminderTimeMillis.update { parsedInfo.reminderTime }
+        _isRecurring.update { parsedInfo.isRecurring }
+        _recurrenceIntervalMillis.update { parsedInfo.recurrenceIntervalMillis }
+        _recurrenceEndTime.update { parsedInfo.recurrenceEndTime }
     }
 
     fun addReminder(
@@ -202,10 +235,9 @@ class AddReminderViewModel @Inject constructor(
             onComplete(false, null)
             return
         }
-        // If recurring, interval must be set
+
         if (_isRecurring.value && _recurrenceIntervalMillis.value == null) {
-            // Or handle this by setting a default interval, or showing an error
-            onComplete(false, null) // Cannot save recurring reminder without interval
+            onComplete(false, null)
             return
         }
 
@@ -234,15 +266,13 @@ class AddReminderViewModel @Inject constructor(
                 )
                 val savedReminder = reminderService.addReminder(reminder)
                 if (savedReminder.id.isNotBlank()) {
-                    // Notification scheduling needs to be aware of recurrence
-                    // This will be handled in a subsequent step. For now, it schedules the first one.
                     val snoozeMinutes = userPreferencesRepository.defaultSnoozeMinutes.first()
                     val soundResourceName = userPreferencesRepository.selectedNotificationSound.first()
                         ?: UserPreferencesRepository.DEFAULT_SOUND_RESOURCE_NAME
 
                     NotificationUtils.scheduleNotification(
                         context = application.applicationContext,
-                        reminder = savedReminder, // savedReminder now contains recurrence info
+                        reminder = savedReminder,
                         snoozeMinutes = snoozeMinutes,
                         soundResourceName = soundResourceName
                     )

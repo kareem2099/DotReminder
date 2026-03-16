@@ -5,11 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
@@ -51,14 +46,14 @@ import com.FreeRave.remindme.service.VerificationService // Add import
 import kotlinx.coroutines.flow.collectLatest
 import com.FreeRave.remindme.MainViewModel
 import com.FreeRave.remindme.data.ThemeSetting
-import com.FreeRave.remindme.ui.theme.ScreenBackground
-import com.FreeRave.remindme.ui.theme.ScreenType
 import com.FreeRave.remindme.ui.responsive.*
 import com.FreeRave.remindme.ui.layout.*
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.ComponentActivity // For activity access
 import com.FreeRave.remindme.ui.components.PhoneFieldWithOTP
+import com.FreeRave.remindme.ui.theme.OceanBlueBackground
+
 // Phonenumber import might be unused now, will be removed by formatter if so
 
 @Composable
@@ -140,354 +135,145 @@ fun SignUpScreen(
         }
     }
 
-    ScreenBackground(
-        screenType = ScreenType.SIGNUP,
+    OceanBlueBackground(
         themeSetting = currentTheme,
         useDarkTheme = resolvedUseDarkTheme
     ) {
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.TopCenter)
-        )
+        Scaffold(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        ) { paddingValues ->
 
-        AdaptiveContainer { windowSizeClass, containerModifier ->
-            Column(
-                modifier = containerModifier
-                    .graphicsLayer {
-                        rotationY = -90f * (1f - animationProgress)
-                        cameraDistance = 12 * density
-                        this.alpha = animationProgress
-                    },
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (showSuccessAnimation) {
-                    val successComposition by rememberLottieComposition(
-                        LottieCompositionSpec.Asset(
-                            "lottie/checkmark.json"
+            AdaptiveContainer { windowSizeClass, containerModifier ->
+                Column(
+                    modifier = containerModifier
+                        .padding(paddingValues)
+                        .graphicsLayer {
+                            rotationY = -90f * (1f - animationProgress)
+                            cameraDistance = 12 * density
+                            this.alpha = animationProgress
+                        },
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (showSuccessAnimation) {
+                        val successComposition by rememberLottieComposition(
+                            LottieCompositionSpec.Asset(
+                                "lottie/checkmark.json"
+                            )
                         )
-                    )
-                    LottieAnimation(
-                        composition = successComposition,
-                        iterations = 1, // Play once for success
-                        modifier = Modifier.size(200.dp)
-                    )
-                    Text(
-                        text = "Account Created Successfully!",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
-                } else {
-                    // Box to contain the animated Welcome Lottie and the SignUp Content (Branding + Form)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(
-                                1f,
-                                fill = false
-                            ), // Allow content to define its size, centered by parent Column
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Signup Content (Branding Card + Form + Buttons) (Back of the page)
-                        if (animationProgress > 0.01f) { // Only compose if at least partially visible
-                            val scrollState = rememberScrollState()
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .verticalScroll(scrollState)
-                                    .graphicsLayer {
-                                        rotationY =
-                                            -90f * (1f - animationProgress) // From -90 (invisible) to 0 (flat)
-                                        cameraDistance = 12 * density
-                                        this.alpha = animationProgress // Fades in
-                                    },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Top
-                            ) {
-                                SignUpBranding() // Simplified: no props needed here
-
-                                AdaptiveSpacer(getResponsiveSpacing(16.dp))
-
-                                SignUpForm(
-                                    name = name,
-                                    onNameChange = {
-                                        name = it
-                                        nameError = it.isEmpty()
-                                    },
-                                    nameError = nameError,
-                                    nameFocusRequester = nameFocusRequester,
-                                    email = email,
-                                    onEmailChange = {
-                                        email = it
-                                        emailError = !ValidationUtils.isValidEmail(it)
-                                    },
-                                    emailError = emailError,
-                                    emailFocusRequester = emailFocusRequester,
-                                    phone = phone,
-                                    onPhoneChange = {
-                                        phone = it
-                                        val phoneUtil = PhoneNumberUtil.getInstance()
-                                        val phoneNumberStr = "$countryCode$it"
-                                        try {
-                                            val parsedNumber = phoneUtil.parse(phoneNumberStr, null)
-                                            phoneError = !phoneUtil.isValidNumber(parsedNumber)
-                                        } catch (e: Exception) {
-                                            phoneError = true
-                                        }
-                                    },
-                                    countryCode = countryCode,
-                                    onCountryCodeChange = { countryCode = it },
-                                    phoneError = phoneError,
-                                    phoneFocusRequester = phoneFocusRequester,
-                                    password = password,
-                                    onPasswordChange = {
-                                        password = it
-                                        passwordStrength =
-                                            ValidationUtils.calculatePasswordStrength(it)
-                                        confirmPasswordError =
-                                            confirmPassword.isNotEmpty() && it != confirmPassword
-                                    },
-                                    passwordVisible = passwordVisible,
-                                    onPasswordVisibilityChange = { passwordVisible = it },
-                                    passwordError = passwordError,
-                                    passwordStrength = passwordStrength,
-                                    confirmPassword = confirmPassword,
-                                    onConfirmPasswordChange = {
-                                        confirmPassword = it
-                                        confirmPasswordError = it != password
-                                    },
-                                    confirmPasswordVisible = confirmPasswordVisible,
-                                    onConfirmPasswordVisibilityChange = {
-                                        confirmPasswordVisible = it
-                                    },
-                                    confirmPasswordError = confirmPasswordError,
-                                    passwordFocusRequester = passwordFocusRequester,
-                                    confirmPasswordFocusRequester = confirmPasswordFocusRequester,
-                                    focusManager = focusManager,
-                                    onSendOTP = {
-                                        val phoneUtil = PhoneNumberUtil.getInstance()
-                                        val phoneNumberStr = "$countryCode$phone"
-                                        val isValidNumber = try {
-                                            val parsedNumber = phoneUtil.parse(phoneNumberStr, null)
-                                            phoneUtil.isValidNumber(parsedNumber)
-                                        } catch (e: Exception) {
-                                            false
-                                        }
-
-                                        if (isValidNumber) {
-                                            isLoadingOTP = true
-                                            coroutineScope.launch {
-                                                val recipient = "$countryCode$phone"
-                                                verificationService.sendOTP(
-                                                    recipient,
-                                                    VerificationService.VerificationType.PHONE,
-                                                    context as ComponentActivity
-                                                )
-                                                    .collectLatest { result ->
-                                                        if (result.success) {
-                                                            otpId = result.otpId
-                                                            otpSent = true
-                                                            showOtpVerification = true
-                                                            coroutineScope.launch {
-                                                                snackbarHostState.showSnackbar("OTP sent to $recipient")
-                                                            }
-                                                        } else {
-                                                            coroutineScope.launch {
-                                                                snackbarHostState.showSnackbar(
-                                                                    result.message
-                                                                )
-                                                            }
-                                                        }
-                                                        isLoadingOTP = false
-                                                    }
-                                            }
-                                        } else {
-                                            phoneError = true
-                                            coroutineScope.launch {
-                                                snackbarHostState.showSnackbar("Please enter a valid phone number, including country code.")
-                                            }
-                                        }
-                                    },
-                                    isLoadingOTP = isLoadingOTP,
-                                    otpSent = otpSent
-                                )
-
-                                AdaptiveSpacer(getResponsiveSpacing(16.dp))
-
-                                AnimatedVisibility(
-                                    visible = isLoading,
-                                    enter = fadeIn(animationSpec = tween(200)),
-                                    exit = fadeOut(animationSpec = tween(200))
+                        LottieAnimation(
+                            composition = successComposition,
+                            iterations = 1, // Play once for success
+                            modifier = Modifier.size(200.dp)
+                        )
+                        Text(
+                            text = "Account Created Successfully!",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                    } else {
+                        // Box to contain the animated Welcome Lottie and the SignUp Content (Branding + Form)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(
+                                    1f,
+                                    fill = false
+                                ), // Allow content to define its size, centered by parent Column
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Signup Content (Branding Card + Form + Buttons) (Back of the page)
+                            if (animationProgress > 0.01f) { // Only compose if at least partially visible
+                                val scrollState = rememberScrollState()
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(scrollState)
+                                        .graphicsLayer {
+                                            rotationY =
+                                                -90f * (1f - animationProgress) // From -90 (invisible) to 0 (flat)
+                                            cameraDistance = 12 * density
+                                            this.alpha = animationProgress // Fades in
+                                        },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
                                 ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                }
+                                    SignUpBranding() // Simplified: no props needed here
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                    AdaptiveSpacer(getResponsiveSpacing(16.dp))
 
-                                if (showOtpVerification) {
-                                    TextFieldInput(
-                                        value = otpCode,
-                                        onValueChange = {
-                                            otpCode = it
-                                            otpError = false // Clear error when typing
+                                    SignUpForm(
+                                        name = name,
+                                        onNameChange = {
+                                            name = it
+                                            nameError = it.isEmpty()
                                         },
-                                        label = "OTP Code",
-                                        placeholder = "Enter 6-digit code",
-                                        isError = otpError,
-                                        supportingText = {
-                                            if (otpError) {
-                                                Text(
-                                                    "Invalid OTP code",
-                                                    color = MaterialTheme.colorScheme.error,
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
-                                            } else {
-                                                Text(
-                                                    "OTP sent to $countryCode$phone",
-                                                    style = MaterialTheme.typography.bodySmall
-                                                )
+                                        nameError = nameError,
+                                        nameFocusRequester = nameFocusRequester,
+                                        email = email,
+                                        onEmailChange = {
+                                            email = it
+                                            emailError = !ValidationUtils.isValidEmail(it)
+                                        },
+                                        emailError = emailError,
+                                        emailFocusRequester = emailFocusRequester,
+                                        phone = phone,
+                                        onPhoneChange = {
+                                            phone = it
+                                            val phoneUtil = PhoneNumberUtil.getInstance()
+                                            val phoneNumberStr = "$countryCode$it"
+                                            try {
+                                                val parsedNumber =
+                                                    phoneUtil.parse(phoneNumberStr, null)
+                                                phoneError = !phoneUtil.isValidNumber(parsedNumber)
+                                            } catch (e: Exception) {
+                                                phoneError = true
                                             }
                                         },
-                                        modifier = Modifier,
-                                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    TextButton(
-                                        onClick = { showOtpVerification = false },
-                                        contentPadding = PaddingValues(0.dp)
-                                    ) {
-                                        Text("Back to form")
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-
-                                PrimaryButton(
-                                    text = if (isLoading) {
-                                        if (showOtpVerification) "Signing Up..." else "Sending OTP..."
-                                    } else {
-                                        if (showOtpVerification) "Sign Up" else "Send OTP"
-                                    },
-                                    onClick = {
-                                        if (showOtpVerification) {
-                                            // Verify OTP
-                                            isLoading = true
-                                            coroutineScope.launch {
-                                                val result =
-                                                    verificationService.verifyOTP(otpId, otpCode)
-                                                isLoading = false
-                                                if (result.success) {
-                                                    // OTP verified, now proceed with Firebase sign up
-                                                    authService.signUpWithEmail(
-                                                        email = email,
-                                                        password = password,
-                                                        name = name,
-                                                        onSuccess = {
-                                                            val e164Phone = try {
-                                                                val phoneUtil =
-                                                                    PhoneNumberUtil.getInstance()
-                                                                val regionCode = try {
-                                                                    phoneUtil.getRegionCodeForCountryCode(
-                                                                        countryCode.substring(1)
-                                                                            .toInt()
-                                                                    )
-                                                                } catch (e: Exception) {
-                                                                    "US"
-                                                                }
-                                                                val phoneNumber =
-                                                                    phoneUtil.parse(
-                                                                        phone,
-                                                                        regionCode
-                                                                    )
-                                                                if (phoneUtil.isValidNumber(
-                                                                        phoneNumber
-                                                                    )
-                                                                ) {
-                                                                    phoneUtil.format(
-                                                                        phoneNumber,
-                                                                        PhoneNumberUtil.PhoneNumberFormat.E164
-                                                                    )
-                                                                } else {
-                                                                    "$countryCode$phone"
-                                                                }
-                                                            } catch (e: Exception) {
-                                                                "$countryCode$phone"
-                                                            }
-
-                                                            // Since phone OTP verified, set isEmailVerified to true (representing account verified)
-                                                            val user = User(
-                                                                id = authService.getCurrentUserId(),
-                                                                name = name,
-                                                                email = email,
-                                                                phone = e164Phone,
-                                                                isEmailVerified = true // OTP verification replaces email verification
-                                                            )
-                                                            FirebaseService().saveUser(user) { success ->
-                                                                if (success) {
-                                                                    coroutineScope.launch {
-                                                                        showSuccessAnimation = true
-                                                                        delay(3000L)
-                                                                        // After OTP verification, navigate directly to home (no need for email verification screen)
-                                                                        navController.navigate(
-                                                                            Screen.Home.route
-                                                                        ) {
-                                                                            popUpTo(Screen.SignUp.route) {
-                                                                                inclusive = true
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    coroutineScope.launch {
-                                                                        snackbarHostState.showSnackbar(
-                                                                            "Failed to save user profile"
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }
-                                                        },
-                                                        onFailure = { e ->
-                                                            val errorMessage = when (e) {
-                                                                is FirebaseAuthWeakPasswordException -> "Password must be at least 6 characters"
-                                                                is FirebaseAuthInvalidCredentialsException -> "Invalid email format"
-                                                                is FirebaseAuthUserCollisionException -> "Email already in use"
-                                                                else -> "Sign up failed: ${e.localizedMessage}"
-                                                            }
-                                                            coroutineScope.launch {
-                                                                snackbarHostState.showSnackbar(
-                                                                    errorMessage
-                                                                )
-                                                            }
-                                                        }
-                                                    )
-                                                } else {
-                                                    otpError = true
-                                                    coroutineScope.launch {
-                                                        snackbarHostState.showSnackbar(result.message)
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            // Send OTP
-                                            nameError = name.isEmpty()
-                                            emailError = !ValidationUtils.isValidEmail(email)
-                                            phoneError = phone.isEmpty() // Basic validation
-                                            passwordError =
-                                                !ValidationUtils.isValidPassword(password)
+                                        countryCode = countryCode,
+                                        onCountryCodeChange = { countryCode = it },
+                                        phoneError = phoneError,
+                                        phoneFocusRequester = phoneFocusRequester,
+                                        password = password,
+                                        onPasswordChange = {
+                                            password = it
+                                            passwordStrength =
+                                                ValidationUtils.calculatePasswordStrength(it)
                                             confirmPasswordError =
-                                                !ValidationUtils.doPasswordsMatch(
-                                                    password,
-                                                    confirmPassword
-                                                )
+                                                confirmPassword.isNotEmpty() && it != confirmPassword
+                                        },
+                                        passwordVisible = passwordVisible,
+                                        onPasswordVisibilityChange = { passwordVisible = it },
+                                        passwordError = passwordError,
+                                        passwordStrength = passwordStrength,
+                                        confirmPassword = confirmPassword,
+                                        onConfirmPasswordChange = {
+                                            confirmPassword = it
+                                            confirmPasswordError = it != password
+                                        },
+                                        confirmPasswordVisible = confirmPasswordVisible,
+                                        onConfirmPasswordVisibilityChange = {
+                                            confirmPasswordVisible = it
+                                        },
+                                        confirmPasswordError = confirmPasswordError,
+                                        passwordFocusRequester = passwordFocusRequester,
+                                        confirmPasswordFocusRequester = confirmPasswordFocusRequester,
+                                        focusManager = focusManager,
+                                        onSendOTP = {
+                                            val phoneUtil = PhoneNumberUtil.getInstance()
+                                            val phoneNumberStr = "$countryCode$phone"
+                                            val isValidNumber = try {
+                                                val parsedNumber =
+                                                    phoneUtil.parse(phoneNumberStr, null)
+                                                phoneUtil.isValidNumber(parsedNumber)
+                                            } catch (e: Exception) {
+                                                false
+                                            }
 
-                                            if (!nameError && !emailError && !phoneError && !passwordError && !confirmPasswordError) {
-                                                isLoading = true
+                                            if (isValidNumber) {
+                                                isLoadingOTP = true
                                                 coroutineScope.launch {
                                                     val recipient = "$countryCode$phone"
                                                     verificationService.sendOTP(
@@ -498,6 +284,7 @@ fun SignUpScreen(
                                                         .collectLatest { result ->
                                                             if (result.success) {
                                                                 otpId = result.otpId
+                                                                otpSent = true
                                                                 showOtpVerification = true
                                                                 coroutineScope.launch {
                                                                     snackbarHostState.showSnackbar("OTP sent to $recipient")
@@ -509,27 +296,244 @@ fun SignUpScreen(
                                                                     )
                                                                 }
                                                             }
-                                                            isLoading = false
+                                                            isLoadingOTP = false
                                                         }
                                                 }
+                                            } else {
+                                                phoneError = true
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar("Please enter a valid phone number, including country code.")
+                                                }
                                             }
-                                        }
-                                    },
-                                    enabled = !isLoading
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                TextButton(
-                                    onClick = { navController.navigate(Screen.Login.route) },
-                                    contentPadding = PaddingValues(0.dp)
-                                ) {
-                                    Text(
-                                        buildString {
-                                            append("Already have an account? ")
-                                            append("Login")
                                         },
+                                        isLoadingOTP = isLoadingOTP,
+                                        otpSent = otpSent
                                     )
+
+                                    AdaptiveSpacer(getResponsiveSpacing(16.dp))
+
+                                    AnimatedVisibility(
+                                        visible = isLoading,
+                                        enter = fadeIn(animationSpec = tween(200)),
+                                        exit = fadeOut(animationSpec = tween(200))
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    if (showOtpVerification) {
+                                        TextFieldInput(
+                                            value = otpCode,
+                                            onValueChange = {
+                                                otpCode = it
+                                                otpError = false // Clear error when typing
+                                            },
+                                            label = "OTP Code",
+                                            placeholder = "Enter 6-digit code",
+                                            isError = otpError,
+                                            supportingText = {
+                                                if (otpError) {
+                                                    Text(
+                                                        "Invalid OTP code",
+                                                        color = MaterialTheme.colorScheme.error,
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                } else {
+                                                    Text(
+                                                        "OTP sent to $countryCode$phone",
+                                                        style = MaterialTheme.typography.bodySmall
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier,
+                                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                                        )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        TextButton(
+                                            onClick = { showOtpVerification = false },
+                                            contentPadding = PaddingValues(0.dp)
+                                        ) {
+                                            Text("Back to form")
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+
+                                    PrimaryButton(
+                                        text = if (isLoading) {
+                                            if (showOtpVerification) "Signing Up..." else "Sending OTP..."
+                                        } else {
+                                            if (showOtpVerification) "Sign Up" else "Send OTP"
+                                        },
+                                        onClick = {
+                                            if (showOtpVerification) {
+                                                // Verify OTP
+                                                isLoading = true
+                                                coroutineScope.launch {
+                                                    val result =
+                                                        verificationService.verifyOTP(
+                                                            otpId,
+                                                            otpCode
+                                                        )
+                                                    isLoading = false
+                                                    if (result.success) {
+                                                        // OTP verified, now proceed with Firebase sign up
+                                                        authService.signUpWithEmail(
+                                                            email = email,
+                                                            password = password,
+                                                            name = name,
+                                                            onSuccess = {
+                                                                val e164Phone = try {
+                                                                    val phoneUtil =
+                                                                        PhoneNumberUtil.getInstance()
+                                                                    val regionCode = try {
+                                                                        phoneUtil.getRegionCodeForCountryCode(
+                                                                            countryCode.substring(1)
+                                                                                .toInt()
+                                                                        )
+                                                                    } catch (e: Exception) {
+                                                                        "US"
+                                                                    }
+                                                                    val phoneNumber =
+                                                                        phoneUtil.parse(
+                                                                            phone,
+                                                                            regionCode
+                                                                        )
+                                                                    if (phoneUtil.isValidNumber(
+                                                                            phoneNumber
+                                                                        )
+                                                                    ) {
+                                                                        phoneUtil.format(
+                                                                            phoneNumber,
+                                                                            PhoneNumberUtil.PhoneNumberFormat.E164
+                                                                        )
+                                                                    } else {
+                                                                        "$countryCode$phone"
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    "$countryCode$phone"
+                                                                }
+
+                                                                // Since phone OTP verified, set isEmailVerified to true (representing account verified)
+                                                                val user = User(
+                                                                    id = authService.getCurrentUserId(),
+                                                                    name = name,
+                                                                    email = email,
+                                                                    phone = e164Phone,
+                                                                    isEmailVerified = true // OTP verification replaces email verification
+                                                                )
+                                                                FirebaseService().saveUser(user) { success ->
+                                                                    if (success) {
+                                                                        coroutineScope.launch {
+                                                                            showSuccessAnimation =
+                                                                                true
+                                                                            delay(3000L)
+                                                                            // After OTP verification, navigate directly to home (no need for email verification screen)
+                                                                            navController.navigate(
+                                                                                Screen.Home.route
+                                                                            ) {
+                                                                                popUpTo(Screen.SignUp.route) {
+                                                                                    inclusive = true
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    } else {
+                                                                        coroutineScope.launch {
+                                                                            snackbarHostState.showSnackbar(
+                                                                                "Failed to save user profile"
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            onFailure = { e ->
+                                                                val errorMessage = when (e) {
+                                                                    is FirebaseAuthWeakPasswordException -> "Password must be at least 6 characters"
+                                                                    is FirebaseAuthInvalidCredentialsException -> "Invalid email format"
+                                                                    is FirebaseAuthUserCollisionException -> "Email already in use"
+                                                                    else -> "Sign up failed: ${e.localizedMessage}"
+                                                                }
+                                                                coroutineScope.launch {
+                                                                    snackbarHostState.showSnackbar(
+                                                                        errorMessage
+                                                                    )
+                                                                }
+                                                            }
+                                                        )
+                                                    } else {
+                                                        otpError = true
+                                                        coroutineScope.launch {
+                                                            snackbarHostState.showSnackbar(result.message)
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                // Send OTP
+                                                nameError = name.isEmpty()
+                                                emailError = !ValidationUtils.isValidEmail(email)
+                                                phoneError = phone.isEmpty() // Basic validation
+                                                passwordError =
+                                                    !ValidationUtils.isValidPassword(password)
+                                                confirmPasswordError =
+                                                    !ValidationUtils.doPasswordsMatch(
+                                                        password,
+                                                        confirmPassword
+                                                    )
+
+                                                if (!nameError && !emailError && !phoneError && !passwordError && !confirmPasswordError) {
+                                                    isLoading = true
+                                                    coroutineScope.launch {
+                                                        val recipient = "$countryCode$phone"
+                                                        verificationService.sendOTP(
+                                                            recipient,
+                                                            VerificationService.VerificationType.PHONE,
+                                                            context as ComponentActivity
+                                                        )
+                                                            .collectLatest { result ->
+                                                                if (result.success) {
+                                                                    otpId = result.otpId
+                                                                    showOtpVerification = true
+                                                                    coroutineScope.launch {
+                                                                        snackbarHostState.showSnackbar(
+                                                                            "OTP sent to $recipient"
+                                                                        )
+                                                                    }
+                                                                } else {
+                                                                    coroutineScope.launch {
+                                                                        snackbarHostState.showSnackbar(
+                                                                            result.message
+                                                                        )
+                                                                    }
+                                                                }
+                                                                isLoading = false
+                                                            }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        enabled = !isLoading
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    TextButton(
+                                        onClick = { navController.navigate(Screen.Login.route) },
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text(
+                                            buildString {
+                                                append("Already have an account? ")
+                                                append("Login")
+                                            },
+                                        )
+                                    }
                                 }
                             }
                         }

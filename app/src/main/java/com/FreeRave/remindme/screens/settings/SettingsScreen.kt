@@ -1,10 +1,10 @@
 package com.FreeRave.remindme.screens.settings
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState // Added import
-import androidx.compose.foundation.verticalScroll // Added import
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack // Changed for AutoMirrored
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -18,23 +18,22 @@ import com.FreeRave.remindme.screens.settings.components.ReminderSettingsSection
 import com.FreeRave.remindme.screens.settings.components.SecuritySettingsSection
 import com.FreeRave.remindme.screens.settings.components.SupportDeveloperSection
 import com.FreeRave.remindme.screens.settings.components.AdPreferencesSection
-// import androidx.compose.material.icons.filled.Fingerprint // Removed unused import
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.FreeRave.remindme.screens.auth.AuthViewModel // Added import
+import com.FreeRave.remindme.screens.auth.AuthViewModel
 import com.FreeRave.remindme.navigation.Screen
 import com.FreeRave.remindme.ui.components.PrimaryButton
 import com.FreeRave.remindme.ui.components.SnoozeBottomSheet
 import com.FreeRave.remindme.ui.components.ThemeBottomSheet
 import com.FreeRave.remindme.ui.theme.AppTypography
-import com.FreeRave.remindme.ui.theme.ScreenBackground
-import com.FreeRave.remindme.ui.theme.ScreenType
+import com.FreeRave.remindme.ui.theme.OceanBlueBackground
 import com.FreeRave.remindme.MainViewModel
 import com.FreeRave.remindme.ui.responsive.*
 import com.FreeRave.remindme.ui.layout.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,12 +94,12 @@ fun SettingsScreen(
     val currentTheme by mainViewModel.currentTheme.collectAsStateWithLifecycle()
 
 
-    ScreenBackground(
-        screenType = ScreenType.SETTINGS,
+    OceanBlueBackground(
         themeSetting = currentTheme,
-        useDarkTheme = false // Settings screen uses light theme
+        useDarkTheme = false
     ) {
         Scaffold(
+            containerColor = Color.Transparent,
             snackbarHost = { SnackbarHost(snackbarHostState) }, // Add SnackbarHost
             topBar = {
                 TopAppBar(

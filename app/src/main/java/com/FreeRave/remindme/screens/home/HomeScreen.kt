@@ -48,13 +48,12 @@ import com.FreeRave.remindme.ui.components.WelcomeSection
 import com.FreeRave.remindme.ui.components.AnimatedReminderList
 import com.FreeRave.remindme.ui.theme.AppTypography
 import com.FreeRave.remindme.ui.theme.getOceanEnhancedText
-import com.FreeRave.remindme.ui.theme.ScreenBackground
-import com.FreeRave.remindme.ui.theme.ScreenType
 import com.FreeRave.remindme.utils.CategoryUtils
 import com.FreeRave.remindme.utils.GpsEnableDialog
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.FreeRave.remindme.ui.theme.OceanBlueBackground
 import com.FreeRave.remindme.ui.responsive.*
 import com.FreeRave.remindme.ui.layout.*
 import java.text.SimpleDateFormat
@@ -80,12 +79,12 @@ fun HomeScreen(navController: NavController) {
     val categoryViewModel: com.FreeRave.remindme.screens.category.CategoryViewModel = hiltViewModel()
     val allCategories by categoryViewModel.allCategories.collectAsState()
 
-    ScreenBackground(
-        screenType = ScreenType.HOME,
+    OceanBlueBackground(
         themeSetting = currentTheme,
-        useDarkTheme = false // Home screen uses light theme
+        useDarkTheme = false
     ) {
         Scaffold(
+            containerColor = Color.Transparent,
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = { navController.navigate(Screen.AiChat.route) },

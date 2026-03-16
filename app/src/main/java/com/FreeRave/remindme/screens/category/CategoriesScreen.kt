@@ -70,7 +70,7 @@ fun CategoriesScreen(
         }
     ) { paddingValues ->
         AdaptiveContainer { _, containerModifier ->
-            // ✅ LazyColumn مباشرة بدل AdaptiveColumn عشان نتجنب nested scroll
+            // ✅ LazyColumn directly instead of AdaptiveColumn to avoid nested scroll
             LazyColumn(
                 modifier = containerModifier
                     .padding(paddingValues)

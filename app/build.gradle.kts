@@ -30,8 +30,8 @@ android {
         applicationId = "com.FreeRave.remindme"
         minSdk = 29
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.0.4"
+        versionCode = 6
+        versionName = "0.0.5"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val geminiApiKey = getApiKey("GEMINI_API_KEY")
@@ -103,15 +103,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // ✅ الطريقة الحديثة بدلاً من kotlinOptions (deprecated)
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
-        }
-    }
-
     ndkVersion = "29.0.13113456"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
+    }
 }
 
 dependencies {
@@ -177,9 +176,6 @@ dependencies {
     ksp(libs.moshi.codegen)
     implementation(libs.kotlinpoet)
     implementation(libs.kotlinx.metadata.jvm)
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui)
-    implementation(libs.androidx.media3.common)
 
     // --- Google Play In-App Updates ---
     implementation(libs.play.app.update)

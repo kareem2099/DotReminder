@@ -1,0 +1,94 @@
+{
+  "project": "RemindMe",
+  "app_version": "0.0.5",
+  "tracker_version": "3.3.0",
+  "last_updated": "2026-03-16",
+  "previous_version": "0.0.4",
+  "versionCode": 6,
+
+  "completed_in_v0.0.5": [
+    "Remove VideoBackgroundPlayer, ScreenBackground, CloudinaryConfig files",
+    "Remove media3 ExoPlayer dependencies from build.gradle",
+    "Remove 74MB video assets from assets/backgrounds/",
+    "Remove heavy Coil image background dependencies",
+    "Implement OceanBlueBackground across LoginScreen, SignUpScreen, HomeScreen, SettingsScreen, AiChatScreen",
+    "Fix Scaffold containerColor = Transparent in all screens",
+    "Refactor AppNavGraph - flat structure, no ScreenBackground wrappers",
+    "Fix deprecated hiltViewModel imports across all screens",
+    "ResponsiveDesignDemo.kt cleanup",
+    "Upgrade GeminiService to gemini-2.5-flash",
+    "Add parseReminderToJSON() to GeminiService for Arabic and English reminder parsing",
+    "Integrate parseReminderToJSON in AiViewModel replacing NLPUtils for smarter AI reminder parsing",
+    "Revamp AiChatScreen UI with FAB send button and WhatsApp-style chat bubbles",
+    "Refactor AiViewModel - cleaner state management and better error messages"
+  ],
+
+  "todo_v0.0.6": [
+    {
+      "id": "integrate_ai_parsing_add_reminder",
+      "title": "Integrate AI Parsing in AddReminderViewModel",
+      "description": "Add parseReminderToJSON in AddReminderViewModel with offline NLPUtils fallback",
+      "status": "pending",
+      "priority": "medium",
+      "files_to_modify": [
+        "screens/add/AddReminderViewModel.kt"
+      ]
+    },
+    {
+      "id": "fix_auth_issues",
+      "title": "Fix Auth Edge Cases",
+      "description": "Investigate and resolve remaining authentication edge cases or Firebase state issues",
+      "status": "pending",
+      "priority": "high",
+      "files_to_modify": [
+        "screens/auth/AuthViewModel.kt",
+        "service/FirebaseAuthServiceImpl.kt"
+      ]
+    },
+    {
+      "id": "fix_change_password",
+      "title": "Implement Real Change Password",
+      "description": "Replace mock changePassword() with real Firebase re-authentication and password update",
+      "status": "pending",
+      "priority": "high",
+      "files_to_modify": [
+        "screens/auth/AuthViewModel.kt",
+        "service/FirebaseAuthServiceImpl.kt",
+        "service/FirebaseAuthServiceInterface.kt"
+      ]
+    },
+    {
+      "id": "calendar_feature",
+      "title": "Complete Calendar Feature",
+      "description": "Finish implementing Calendar View with HorizontalCalendar library integration",
+      "status": "in_progress",
+      "priority": "high",
+      "files_to_modify": [
+        "screens/calendar/CalendarScreen.kt",
+        "screens/calendar/CalendarViewModel.kt"
+      ]
+    },
+    {
+      "id": "fix_general_bugs",
+      "title": "Fix General Bugs",
+      "description": "Hunt down and fix minor UI/UX glitches discovered during v0.0.5 testing",
+      "status": "pending",
+      "priority": "medium",
+      "files_to_modify": [
+        "Various files across the project"
+      ]
+    }
+  ],
+
+  "testing_checklist_v0.0.5": [
+    "Test app size reduced significantly after removing video assets and ExoPlayer",
+    "Test AppNavGraph navigation between all screens without crashes",
+    "Verify OceanBlueBackground displays correctly on all screens",
+    "Verify Snackbars appear correctly without layout crashes",
+    "Test AiChatScreen opens instantly without intro animation delay",
+    "Test Gemini 2.5 Flash responds correctly in Arabic and English",
+    "Test parseReminderToJSON extracts correct title, time, and category",
+    "Verify authentication states are stable across app restarts",
+    "Test chat bubbles display correctly for both USER and AI messages"
+  ]
+}

@@ -6,7 +6,7 @@
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-purple.svg)](https://developer.android.com/jetpack/compose)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange.svg)](https://firebase.google.com)
-[![Version](https://img.shields.io/badge/Version-0.0.4-brightgreen.svg)](https://github.com/kareem2099/DotReminder)
+[![Version](https://img.shields.io/badge/Version-0.0.5-brightgreen.svg)](https://github.com/kareem2099/DotReminder)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -33,7 +33,8 @@
 - **Reminder Templates** — Save frequently used reminder configurations for quick reuse
 
 ### 🤖 AI-Powered Features
-- **AI Assistant Chat** — Natural language processing for creating and managing reminders
+- **AI Assistant Chat** — Natural language processing in Arabic & English powered by Gemini 2.5 Flash
+- **Smart JSON Parsing** — Gemini extracts reminder title, exact time, and category automatically
 - **Smart Suggestions** — AI-powered recommendations based on your reminder patterns
 
 ### 📱 Widgets & Quick Access
@@ -44,7 +45,7 @@
 - **Multi-provider Authentication** — Email, Google, and Facebook sign-in
 - **Biometric Authentication** — Fingerprint and face unlock support
 - **Two-Factor Authentication (2FA)** — TOTP-based with backup codes
-- **Active Session Management** — View and sign out devices remotely
+- **Active Session Management** — View and sign out devices remotely via real-time Firestore
 - **Account Security Settings** — Full control over your account security
 
 ---
@@ -83,19 +84,13 @@ BANNER_AD_UNIT_ID=your_banner_id
 INTERSTITIAL_AD_UNIT_ID=your_interstitial_id
 APP_OPEN_AD_UNIT_ID=your_app_open_id
 REWARDED_AD_UNIT_ID=your_rewarded_id
-```
-
-**4. Configure Release Signing**
-
-Create `gradle.properties` (never commit this):
-```properties
-MYAPP_RELEASE_STORE_FILE=/path/to/your/keystore.jks
+MYAPP_RELEASE_STORE_FILE=/path/to/your/keystore.keystore
 MYAPP_RELEASE_STORE_PASSWORD=your_store_password
 MYAPP_RELEASE_KEY_ALIAS=your_key_alias
 MYAPP_RELEASE_KEY_PASSWORD=your_key_password
 ```
 
-**5. Configure Firestore Rules**
+**4. Configure Firestore Rules**
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -125,7 +120,7 @@ service cloud.firestore {
 }
 ```
 
-**6. Build and Run**
+**5. Build and Run**
 ```bash
 ./gradlew build
 ./gradlew installDebug
@@ -147,7 +142,7 @@ service cloud.firestore {
 | Auth | Firebase Auth + Google + Facebook |
 | Local Storage | DataStore Preferences |
 | Location | Google Play Services Location + Geofencing |
-| AI | Google Gemini |
+| AI | Google Gemini 2.5 Flash |
 | Build | AGP 9.1 + KSP |
 
 ### Project Structure

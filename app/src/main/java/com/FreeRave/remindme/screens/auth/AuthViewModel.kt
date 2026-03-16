@@ -4,22 +4,22 @@ import android.content.Context
 import androidx.activity.result.ActivityResult
 import androidx.lifecycle.ViewModel
 import android.content.Intent
-import androidx.activity.ComponentActivity // Added for Facebook
-import androidx.fragment.app.FragmentActivity // For BiometricPrompt
-// Duplicates removed below
+import androidx.activity.ComponentActivity 
+import androidx.fragment.app.FragmentActivity 
+
 import androidx.lifecycle.viewModelScope
 import com.FreeRave.remindme.data.UserPreferencesRepository
 import com.FreeRave.remindme.model.User
-import com.FreeRave.remindme.service.BiometricAuthManager // Added import
-import com.FreeRave.remindme.service.BiometricAvailability // Added import
+import com.FreeRave.remindme.service.BiometricAuthManager 
+import com.FreeRave.remindme.service.BiometricAvailability 
 import com.FreeRave.remindme.service.FacebookSignInOnlyService
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
-import com.FreeRave.remindme.service.GoogleAuthServiceInterface // Changed from GoogleSignInOnlyService
-// import com.FreeRave.remindme.service.GoogleSignInOnlyService // No longer needed directly
+import com.FreeRave.remindme.service.GoogleAuthServiceInterface 
+
 import com.FreeRave.remindme.service.VerificationService
-import com.google.firebase.auth.FirebaseAuth // Added for direct auth state checking
+import com.google.firebase.auth.FirebaseAuth 
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext // Added import
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

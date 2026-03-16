@@ -9,7 +9,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.FreeRave.remindme.data.ThemeSetting
 import com.FreeRave.remindme.MainViewModel
 import com.FreeRave.remindme.screens.auth.AuthViewModel
 import com.FreeRave.remindme.screens.auth.LoginScreen
@@ -27,9 +26,6 @@ import com.FreeRave.remindme.screens.support.SupportScreen
 import com.FreeRave.remindme.screens.calendar.CalendarScreen
 import com.FreeRave.remindme.screens.category.CategoriesScreen
 import com.FreeRave.remindme.screens.templates.TemplatesScreen
-//import com.FreeRave.remindme.screens.SplashScreen
-import com.FreeRave.remindme.ui.theme.ScreenBackground
-import com.FreeRave.remindme.ui.theme.ScreenType
 
 @Composable
 fun AppNavGraph(
@@ -37,34 +33,20 @@ fun AppNavGraph(
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
-    val mainViewModel: MainViewModel = hiltViewModel()
     val authViewModel: AuthViewModel = hiltViewModel()
 
     // Check authentication state
     val loginState by authViewModel.loginState.collectAsState()
 
-    val currentTheme by mainViewModel.currentTheme.collectAsState()
-    val useDarkTheme = when (currentTheme) {
-        ThemeSetting.LIGHT -> false
-        ThemeSetting.DARK -> true
-        ThemeSetting.SYSTEM -> isSystemInDarkTheme()
-        ThemeSetting.OCEAN_BLUE -> isSystemInDarkTheme()
-        ThemeSetting.FOREST_GREEN -> false
-        ThemeSetting.SUNSET_ORANGE -> false
-        ThemeSetting.MIDNIGHT_PURPLE -> true
-        ThemeSetting.CANDY -> false
-    }
-
     // Determine destination after splash based on authentication
     val destinationAfterSplash = when (loginState) {
         is AuthViewModel.LoginState.Success -> {
-            // User is authenticated, go to home unless specific destination requested
             when {
                 startDestination != Screen.Splash.route -> startDestination
                 else -> Screen.Home.route
             }
         }
-        else -> Screen.Login.route // Not authenticated, show login
+        else -> Screen.Login.route
     }
 
     NavHost(
@@ -73,88 +55,75 @@ fun AppNavGraph(
         modifier = modifier
     ) {
         composable(Screen.Login.route) {
-            ScreenBackground(screenType = ScreenType.LOGIN, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                LoginScreen(navController)
-            }
+            LoginScreen(navController)
         }
-        composable(Screen.Splash.route) { /* No longer used in NavHost, handled by MainActivity */ }
+
+        composable(Screen.Splash.route) { /* Handled by MainActivity */ }
+
         composable(Screen.SignUp.route) {
             val viewModel: AuthViewModel = hiltViewModel()
-            ScreenBackground(screenType = ScreenType.SIGNUP, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                SignUpScreen(
-                    navController = navController,
-                    authService = viewModel.firebaseAuthService,
-                    verificationService = viewModel.verificationService
-                )
-            }
+            SignUpScreen(
+                navController = navController,
+                authService = viewModel.firebaseAuthService,
+                verificationService = viewModel.verificationService
+            )
         }
+
         composable(Screen.Home.route) {
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                HomeScreen(navController)
-            }
+            HomeScreen(navController)
         }
+
         composable(Screen.Calendar.route) {
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                CalendarScreen(navController)
-            }
+            CalendarScreen(navController)
         }
+
         composable(Screen.Add.route) {
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                AddReminderScreen(navController)
-            }
+            AddReminderScreen(navController)
         }
+
         composable(Screen.Edit.route) { backStackEntry ->
             val reminderId = backStackEntry.arguments?.getString("reminderId") ?: ""
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                EditReminderScreen(navController, reminderId)
-            }
+            EditReminderScreen(navController, reminderId)
         }
+
         composable(Screen.Settings.route) {
-            ScreenBackground(screenType = ScreenType.SETTINGS, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                SettingsScreen(navController)
-            }
+            SettingsScreen(navController)
         }
+
         composable(Screen.AccountSecurity.route) {
-            ScreenBackground(screenType = ScreenType.SETTINGS, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                AccountSecurityScreen(navController)
-            }
+            AccountSecurityScreen(navController)
         }
+
         composable(Screen.ActiveSessions.route) {
-            ScreenBackground(screenType = ScreenType.SETTINGS, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                ActiveSessionsScreen(navController)
-            }
+            ActiveSessionsScreen(navController)
         }
+
         composable(Screen.SignOut.route) {
             SignOutScreen(navController)
         }
+
         composable(Screen.VerifyEmail.route) {
             val viewModel: AuthViewModel = hiltViewModel()
-            ScreenBackground(screenType = ScreenType.LOGIN, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                VerifyEmailScreen(
-                    navController = navController,
-                    authService = viewModel.firebaseAuthService
-                )
-            }
+            VerifyEmailScreen(
+                navController = navController,
+                authService = viewModel.firebaseAuthService
+            )
         }
+
         composable(Screen.AiChat.route) {
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                AiChatScreen(navController)
-            }
+            AiChatScreen(navController)
         }
+
         composable(Screen.Categories.route) {
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                CategoriesScreen(navController)
-            }
+            CategoriesScreen(navController)
         }
+
         composable(Screen.Templates.route) {
-            ScreenBackground(screenType = ScreenType.HOME, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                TemplatesScreen(navController)
-            }
+            TemplatesScreen(navController)
         }
+
         composable(Screen.Support.route) {
-            ScreenBackground(screenType = ScreenType.SETTINGS, themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
-                SupportScreen(navController)
-            }
+            SupportScreen(navController)
         }
     }
 }

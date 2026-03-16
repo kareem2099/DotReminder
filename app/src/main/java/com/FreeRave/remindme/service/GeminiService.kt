@@ -8,8 +8,8 @@ import android.util.Log
  * To set up the GEMINI_API_KEY:
  * 1. Obtain an API key from the Google AI Studio (https://makersuite.google.com/app/apikey)
  * 2. Add the key to your local.properties file (for development):
- *    GEMINI_API_KEY=your_actual_api_key_here
- *    (local.properties is gitignored and should not be committed to version control)
+ * GEMINI_API_KEY=your_actual_api_key_here
+ * (local.properties is gitignored and should not be committed to version control)
  * 3. For CI/CD or production builds, set the GEMINI_API_KEY environment variable or use the appropriate secret management.
  *
  * If no API key is provided, the service will return error messages gracefully.
@@ -29,7 +29,7 @@ class GeminiService @Inject constructor() {
     init {
         if (BuildConfig.GEMINI_API_KEY.isNotBlank()) {
             generativeModel = GenerativeModel(
-                modelName = "gemini-2.0-flash", // Or another suitable model
+                modelName = "gemini-2.5-flash", // Updated to the faster, smarter 2.5 flash model
                 apiKey = BuildConfig.GEMINI_API_KEY
             )
         } else {
@@ -74,23 +74,23 @@ class GeminiService @Inject constructor() {
             Core Reminder Phrase: "pray" (time is missing)
 
         2.  **Output Format**:
-            *   If the user's input contains both an activity AND a time (relative or absolute), your ONLY output should be:
+            * If the user's input contains both an activity AND a time (relative or absolute), your ONLY output should be:
                 `ACTION_PARSE_REMINDER: [User's Exact Core Reminder Phrase]`
                 Example: User says "call mom tomorrow at 5pm". You output: `ACTION_PARSE_REMINDER: Call mom tomorrow at 5pm`
                 Example: User says "submit report in 3 hours". You output: `ACTION_PARSE_REMINDER: Submit report in 3 hours`
 
-            *   If the user's input contains an activity but NO time information (e.g., "pray", "buy milk"), your ONLY output should be a question asking for the time FOR THAT EXACT ACTIVITY.
+            * If the user's input contains an activity but NO time information (e.g., "pray", "buy milk"), your ONLY output should be a question asking for the time FOR THAT EXACT ACTIVITY.
                 Example: User says "remind me to pray". You output: `When would you like to be reminded to pray?`
                 Example: User says "buy milk". You output: `Okay, when should I remind you to buy milk?`
 
         3.  **DO NOT Change User's Words**:
-            *   DO NOT change the activity the user states. If they say "pray", use "pray". If they say "walk the dog", use "walk the dog".
-            *   DO NOT substitute generic phrases like "check mail" or "take a break" for the user's specific activity.
-            *   DO NOT convert relative times (e.g., "in 10 minutes", "after 1 hour") to absolute times. Pass the relative time phrase LITERALLY. The app will calculate it.
-            *   DO NOT add any conversational filler before the `ACTION_PARSE_REMINDER:` prefix if the command is complete.
+            * DO NOT change the activity the user states. If they say "pray", use "pray". If they say "walk the dog", use "walk the dog".
+            * DO NOT substitute generic phrases like "check mail" or "take a break" for the user's specific activity.
+            * DO NOT convert relative times (e.g., "in 10 minutes", "after 1 hour") to absolute times. Pass the relative time phrase LITERALLY. The app will calculate it.
+            * DO NOT add any conversational filler before the `ACTION_PARSE_REMINDER:` prefix if the command is complete.
 
         4.  **Handling Clarifications**:
-            *   If you asked for a time, and the user provides it (e.g., User: "in 10 minutes"), combine this with the PREVIOUSLY STATED ACTIVITY.
+            * If you asked for a time, and the user provides it (e.g., User: "in 10 minutes"), combine this with the PREVIOUSLY STATED ACTIVITY.
                 Example Flow:
                 User: "remind me to pray"
                 Assistant: "When would you like to be reminded to pray?"
@@ -137,6 +137,60 @@ class GeminiService @Inject constructor() {
         } catch (e: Exception) {
             Log.e("GeminiService", "Error generating content: ${e.message}", e)
             "Sorry, an error occurred while contacting the AI: ${e.localizedMessage}"
+        }
+    }
+
+    /**
+     * This function is specifically designed to act as a silent Data Extractor.
+     * It parses natural language (Arabic or English) and returns a clean JSON string
+     * containing the reminder title, exact time in milliseconds, and category.
+     */
+    suspend fun parseReminderToJSON(userInput: String): String? {
+        if (generativeModel == null) return null
+
+        val currentTime = java.util.Date().toString()
+        val currentMillis = System.currentTimeMillis()
+
+        val prompt = """
+            You are a strict Data Extraction AI for a Reminder App.
+            Your ONLY job is to extract the task, time, and category from the user's text.
+            You must support both Arabic and English natively.
+            
+            Current System Time: $currentTime
+            Current Time in Milliseconds: $currentMillis
+            
+            Instructions:
+            1. Calculate the exact absolute time in milliseconds for the reminder based on the Current System Time.
+            2. Infer a category if possible (e.g., Health, Personal, Work).
+            3. DO NOT output any conversational text, pleasantries, or markdown formatting (no ```json).
+            4. Output ONLY a valid JSON object matching the exact schema below.
+            
+            Schema:
+            {
+              "title": "Cleaned up task title in the original language",
+              "reminderTime": 1712345678000, // Long (Milliseconds epoch time), or null if no time is mentioned
+              "isRecurring": false, // Boolean
+              "category": "Work" // String (Work, Personal, Health, or Other)
+            }
+            
+            User Input: "$userInput"
+        """.trimIndent()
+
+        return try {
+            withContext(Dispatchers.IO) {
+                val response = generativeModel!!.generateContent(prompt)
+                // Clean up the response to ensure it's pure JSON
+                val cleanJson = response.text
+                    ?.replace("```json", "")
+                    ?.replace("```", "")
+                    ?.trim()
+
+                Log.d("GeminiService", "Parsed JSON: $cleanJson")
+                cleanJson
+            }
+        } catch (e: Exception) {
+            Log.e("GeminiService", "JSON Parsing Error: ${e.message}", e)
+            null
         }
     }
 }

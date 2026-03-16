@@ -11,7 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.FragmentActivity // Added import
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.FreeRave.remindme.navigation.Screen
@@ -33,7 +33,7 @@ fun AccountSecurityScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    // ✅ LocalActivity بدل LocalContext
+    // Added LocalActivity instead of LocalContext
     val activity = LocalActivity.current as? FragmentActivity
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -122,7 +122,7 @@ fun AccountSecurityScreen(
                     enabled = biometricAvailability == com.FreeRave.remindme.service.BiometricAvailability.AVAILABLE,
                     onCheckedChange = { enable ->
                         if (enable) {
-                            // ✅ مباشر بدل unwrap loop
+                            // Use Direct instead of unwrap loop
                             if (activity != null) {
                                 authViewModel.attemptToEnableBiometricLogin(activity) { _, message ->
                                     coroutineScope.launch {

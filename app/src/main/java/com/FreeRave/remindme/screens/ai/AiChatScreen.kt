@@ -1,22 +1,11 @@
 package com.FreeRave.remindme.screens.ai
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding 
-import androidx.compose.foundation.layout.navigationBarsPadding 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.Box // Keep Box for ChatMessageItem
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-// Removed many animation/layout imports that are now in AiIntroAnimation.kt
-// Keep specific ones if still needed by ChatMessageItem or Scaffold structure.
-import androidx.compose.foundation.shape.RoundedCornerShape // For ChatMessageItem
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
@@ -24,17 +13,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip // For ChatMessageItem
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.flow.collectLatest
-// Removed kotlinx.coroutines.delay and launch as they are in AiIntroAnimation
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.FreeRave.remindme.MainViewModel
+import com.FreeRave.remindme.data.ThemeSetting
 import com.FreeRave.remindme.ui.layout.AdaptiveContainer
 import com.FreeRave.remindme.ui.responsive.getResponsivePadding
 import com.FreeRave.remindme.ui.responsive.getResponsiveSpacing
+import com.FreeRave.remindme.ui.theme.OceanBlueBackground
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.foundation.layout.imePadding
 
-// Placeholder data class for chat messages
 data class ChatMessage(
     val id: String = java.util.UUID.randomUUID().toString(),
     val text: String,
@@ -46,21 +39,28 @@ enum class SenderType {
     USER, AI
 }
 
-// @SuppressLint("UnusedAutoMirrored") // Removed to avoid Kapt error
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiChatScreen(
     navController: NavController,
-    viewModel: AiViewModel = hiltViewModel()
+    viewModel: AiViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val userInput by viewModel.userInput.collectAsState()
     val chatMessages = viewModel.chatMessages
     val isLoading by viewModel.isLoading.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showIntro by remember { mutableStateOf(true) }
+    val currentTheme by mainViewModel.currentTheme.collectAsStateWithLifecycle()
+    val isSystemDarkTheme = isSystemInDarkTheme()
+    val resolvedUseDarkTheme = remember(currentTheme, isSystemDarkTheme) {
+        when (currentTheme) {
+            ThemeSetting.LIGHT -> false
+            ThemeSetting.DARK -> true
+            else -> isSystemDarkTheme
+        }
+    }
 
-    // Collect effects from ViewModel
     LaunchedEffect(Unit) {
         viewModel.actionEffect.collectLatest { effect ->
             when (effect) {
@@ -77,16 +77,19 @@ fun AiChatScreen(
         }
     }
 
-    if (showIntro) {
-        AiIntroAnimation {
-            showIntro = false
-        }
-    } else {
+    OceanBlueBackground(
+        themeSetting = currentTheme,
+        useDarkTheme = resolvedUseDarkTheme
+    ) {
         Scaffold(
+            containerColor = Color.Transparent,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text("AI Assistant") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent // Transparent AppBar
+                    ),
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -98,8 +101,12 @@ fun AiChatScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)) // Light background for bottom bar
                         .navigationBarsPadding()
                 ) {
+                    if (isLoading) {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -109,66 +116,70 @@ fun AiChatScreen(
                         OutlinedTextField(
                             value = userInput,
                             onValueChange = { viewModel.onUserInputChange(it) },
-                            label = { Text("Ask something...") },
+                            placeholder = { Text("Ask something...") },
                             modifier = Modifier.weight(1f),
                             maxLines = 3,
-                            enabled = !isLoading
+                            enabled = !isLoading,
+                            shape = RoundedCornerShape(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
+                        FloatingActionButton(
                             onClick = { viewModel.sendMessage() },
-                            enabled = userInput.isNotBlank() && !isLoading
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                            modifier = Modifier.size(48.dp)
                         ) {
-                            Icon(Icons.Filled.Send, contentDescription = "Send message")
+                            Icon(Icons.Filled.Send, contentDescription = "Send message", tint = MaterialTheme.colorScheme.onPrimary)
                         }
-                    }
-                    if (isLoading && chatMessages.lastOrNull()?.text == "Thinking...") {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp))
                     }
                 }
             }
         ) { paddingValues ->
-        AdaptiveContainer { windowSizeClass, containerModifier ->
-            LazyColumn(
-                modifier = containerModifier
-                    .padding(paddingValues)
-                    .imePadding() // Apply IME padding here to adjust content above keyboard
-                    .padding(horizontal = getResponsivePadding(8.dp), vertical = getResponsivePadding(8.dp)),
-                reverseLayout = true
-            ) {
-                items(chatMessages.toList().reversed()) { message ->
-                    ChatMessageItem(message = message)
-                    Spacer(modifier = Modifier.height(getResponsiveSpacing(8.dp)))
+            AdaptiveContainer { _, containerModifier ->
+                LazyColumn(
+                    modifier = containerModifier
+                        .padding(paddingValues)
+                        .imePadding()
+                        .padding(horizontal = getResponsivePadding(16.dp), vertical = getResponsivePadding(8.dp)),
+                    reverseLayout = true
+                ) {
+                    items(chatMessages.toList().reversed()) { message ->
+                        ChatMessageItem(message = message)
+                        Spacer(modifier = Modifier.height(getResponsiveSpacing(8.dp)))
+                    }
                 }
             }
         }
     }
-    }
 }
-
-// AnimationStage enum is now in AiIntroAnimation.kt
 
 @Composable
 fun ChatMessageItem(message: ChatMessage) {
-    val alignment = if (message.sender == SenderType.USER) Alignment.CenterEnd else Alignment.CenterStart
-    val backgroundColor = if (message.sender == SenderType.USER) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-    val textColor = if (message.sender == SenderType.USER) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val isUser = message.sender == SenderType.USER
+    val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
+    val backgroundColor = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+    val textColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+    val shape = if (isUser) {
+        RoundedCornerShape(20.dp, 20.dp, 4.dp, 20.dp)
+    } else {
+        RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp)
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                start = if (message.sender == SenderType.AI) 0.dp else 40.dp,
-                end = if (message.sender == SenderType.USER) 0.dp else 40.dp
+                start = if (isUser) 40.dp else 0.dp,
+                end = if (isUser) 0.dp else 40.dp
             ),
         contentAlignment = alignment
     ) {
         Text(
             text = message.text,
             modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
+                .clip(shape)
                 .background(backgroundColor)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             color = textColor,
             style = MaterialTheme.typography.bodyLarge
         )

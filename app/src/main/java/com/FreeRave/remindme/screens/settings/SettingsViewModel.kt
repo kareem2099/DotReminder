@@ -1,13 +1,13 @@
 package com.FreeRave.remindme.screens.settings
 
 import android.app.Application
-import android.util.Log // Add Log import
-import androidx.lifecycle.ViewModel // Keep only this ViewModel import
+import android.util.Log
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.FreeRave.remindme.data.ThemeSetting
 import com.FreeRave.remindme.data.UserPreferencesRepository
-import com.FreeRave.remindme.service.BiometricAuthManager // Added import
-import com.FreeRave.remindme.service.BiometricAvailability // Added import
+import com.FreeRave.remindme.service.BiometricAuthManager
+import com.FreeRave.remindme.service.BiometricAvailability
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
 import com.FreeRave.remindme.service.ReminderService
 import com.FreeRave.remindme.utils.NotificationUtils

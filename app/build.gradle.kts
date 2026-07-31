@@ -29,9 +29,9 @@ android {
     defaultConfig {
         applicationId = "com.FreeRave.remindme"
         minSdk = 29
-        targetSdk = 35
-        versionCode = 6
-        versionName = "0.0.5"
+        targetSdk = 36
+        versionCode = 7
+        versionName = "0.0.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val geminiApiKey = getApiKey("GEMINI_API_KEY")
@@ -110,6 +110,7 @@ kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
     }
 }
 
@@ -118,6 +119,9 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.play.services.location)
     implementation(libs.play.services.identity)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     implementation(libs.play.services.ads)
     implementation(libs.play.services.maps)
     implementation(libs.maps.ktx)

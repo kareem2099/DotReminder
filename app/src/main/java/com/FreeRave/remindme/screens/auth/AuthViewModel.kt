@@ -207,16 +207,12 @@ class AuthViewModel @Inject constructor(
     }
 
     // --- Google Sign-In Methods using GoogleAuthService ---
-    fun getGoogleSignInIntent(context: Context): Intent { // Renamed for clarity, was getGoogleOnlySignInIntent
-        return googleAuthService.getSignInIntent(context)
-    }
-
-    fun handleGoogleSignInResult(result: ActivityResult) { // Renamed for clarity, was handleGoogleOnlySignInResult
+    fun signInWithGoogleCredentialManager(context: Context) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
-            googleAuthService.handleSignInResultAndAuthenticate(
-                result = result,
-                onSuccess = { firebaseUser -> // firebaseUser is of type User from our model
+            googleAuthService.signInWithGoogleCredentialManager(
+                context = context,
+                onSuccess = { firebaseUser ->
                     viewModelScope.launch {
                         if (_rememberMeEnabled.value) {
                             userPreferencesRepository.saveRememberedEmail(firebaseUser.email)
@@ -377,37 +373,22 @@ class AuthViewModel @Inject constructor(
     fun changePassword(currentPassword: String, newPassword: String) {
         viewModelScope.launch {
             _changePasswordState.value = ChangePasswordState.Loading
-            // In a real app, you'd get the current user's email securely
-            val email = firebaseAuthService.getCurrentUserId() // Assuming this can be an email or used to get one
-            if (email.isBlank()) { // Or if it's not an email, handle appropriately
-                 _changePasswordState.value = ChangePasswordState.Error("User not found or email missing.")
-                return@launch
-            }
 
-            // This is a simplified placeholder.
-            // Real implementation requires firebaseAuthService.reauthenticateAndChangePassword(email, currentPassword, newPassword, onSuccess, onFailure)
-            // For now, simulate success if current password is not empty, and new password is not empty.
-            if (currentPassword.isNotEmpty() && newPassword.isNotEmpty()) {
-                // Placeholder for actual re-authentication and password update logic
-                // firebaseAuthService.reauthenticateUser(email, currentPassword) { reauthSuccess ->
-                //    if (reauthSuccess) {
-                //        firebaseAuthService.updateUserPassword(newPassword) { updateSuccess, updateMessage ->
-                //            if (updateSuccess) {
-                //                _changePasswordState.value = ChangePasswordState.Success("Password changed successfully.")
-                //            } else {
-                //                _changePasswordState.value = ChangePasswordState.Error(updateMessage ?: "Failed to update password.")
-                //            }
-                //        }
-                //    } else {
-                //        _changePasswordState.value = ChangePasswordState.Error("Re-authentication failed. Incorrect current password.")
-                //    }
-                // }
-                _changePasswordState.value = ChangePasswordState.Success("Password changed successfully (mock).")
-            } else {
-                _changePasswordState.value = ChangePasswordState.Error("Passwords cannot be empty (mock).")
-            }
+            firebaseAuthService.reauthenticateAndChangePassword(
+                currentPassword = currentPassword,
+                newPassword = newPassword,
+                onSuccess = {
+                    _changePasswordState.value =
+                        ChangePasswordState.Success("Password changed successfully.")
+                },
+                onFailure = { e ->
+                    _changePasswordState.value =
+                        ChangePasswordState.Error(e.message ?: "Failed to change password.")
+                }
+            )
         }
     }
+
     fun resetChangePasswordState() {
         _changePasswordState.value = ChangePasswordState.Idle
     }

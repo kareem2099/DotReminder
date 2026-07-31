@@ -5,9 +5,33 @@ All notable changes to **RemindMe** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2026-07-31
+
+### Added
+- **Android 16 Support (API 36)** — Target SDK updated to API 36 to meet Google Play Console requirements.
+- **Android Credential Manager API** — Full migration of Google Authentication to `androidx.credentials:credentials` & `googleid:1.1.1`.
+- **Single Ticking Clock Source** — Unified `currentTime` ticker (`produceState` 30s) in `HomeScreen` ensuring zero clock drift between top stat cards and card status badges.
+
+### Changed & Redesigned
+- **Home Screen UI Redesign** —
+  - `WelcomeSection` upgraded to modern glassmorphic `Surface` cards with 16dp rounded corners.
+  - `PremiumReminderCard` redesigned with dark surface container, vertical status indicator bar (Red = Overdue, Green = Complete, Primary = Upcoming), and high-contrast text.
+  - FAB layout upgraded to `ExtendedFloatingActionButton` paired with AI Assistant `SmallFloatingActionButton` and 88dp bottom content padding.
+### Fixed & Cleaned
+- **Deprecation Warnings Cleanup** — Completely removed legacy `GoogleSignInClient` / `GoogleSignIn` SDK references and imports across `GoogleAuthServiceImpl`, `GoogleSignInOnlyServiceImpl`, and `FirebaseAuthServiceImpl`.
+- **Compiler Flags** — Added `-Xannotation-default-target=param-property` to Kotlin `freeCompilerArgs` in `app/build.gradle.kts` to eliminate parameter-property annotation warnings.
+- **MapLocationPickerDialog** — Fixed redundant `.toDouble()` conversions on radius calculations.
+- **Dead Code Removal** — Deleted unused legacy `ReminderItem` composable from `HomeScreen.kt`.
+
+### Technical & Build Environment
+- **Gradle Version** — 9.5.0 Wrapper
+- **AGP (Android Gradle Plugin)** — 9.3.1
+- **Kotlin Version** — 2.3.10
+- **Build Target** — Target SDK 36 (Android 16), Min SDK 29 (Android 10), Java 17/21 compatibility
+
 ---
 
-## [0.0.6] - Unreleased
+## [0.0.7] - Unreleased
 
 ### Planned
 - **Real Change Password** — Replace mock implementation with Firebase re-authentication and actual password update

@@ -6,7 +6,7 @@
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-purple.svg)](https://developer.android.com/jetpack/compose)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange.svg)](https://firebase.google.com)
-[![Version](https://img.shields.io/badge/Version-0.0.5-brightgreen.svg)](https://github.com/kareem2099/DotReminder)
+[![Version](https://img.shields.io/badge/Version-0.0.6-brightgreen.svg)](https://github.com/kareem2099/DotReminder)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -42,7 +42,7 @@
 - **Upcoming Reminders Widget** (2×2) — View your next reminders with quick edit access
 
 ### 🔐 Security & Authentication
-- **Multi-provider Authentication** — Email, Google, and Facebook sign-in
+- **Multi-provider Authentication** — Email, Google (Android Credential Manager API), and Facebook sign-in
 - **Biometric Authentication** — Fingerprint and face unlock support
 - **Two-Factor Authentication (2FA)** — TOTP-based with backup codes
 - **Active Session Management** — View and sign out devices remotely via real-time Firestore
@@ -54,9 +54,12 @@
 
 ### Prerequisites
 - Android Studio Hedgehog or later
+- Gradle: **9.5.0**
+- AGP (Android Gradle Plugin): **9.3.1**
+- Kotlin: **2.3.10**
 - Minimum Android SDK: **API 29** (Android 10)
-- Target Android SDK: **API 35** (Android 14)
-- JDK 17
+- Target Android SDK: **API 36** (Android 16)
+- JDK 17 / 21
 
 ### Installation
 

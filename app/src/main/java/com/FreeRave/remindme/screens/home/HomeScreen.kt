@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat // Changed for AutoMirrored
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
@@ -79,6 +80,13 @@ fun HomeScreen(navController: NavController) {
     val categoryViewModel: com.FreeRave.remindme.screens.category.CategoryViewModel = hiltViewModel()
     val allCategories by categoryViewModel.allCategories.collectAsState()
 
+    val currentTime by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000L)
+            value = System.currentTimeMillis()
+        }
+    }
+
     OceanBlueBackground(
         themeSetting = currentTheme,
         useDarkTheme = false
@@ -86,10 +94,25 @@ fun HomeScreen(navController: NavController) {
         Scaffold(
             containerColor = Color.Transparent,
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { navController.navigate(Screen.AiChat.route) },
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Chat, "Chat with AI")
+                    SmallFloatingActionButton(
+                        onClick = { navController.navigate(Screen.AiChat.route) },
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = "AI Assistant")
+                    }
+
+                    ExtendedFloatingActionButton(
+                        onClick = { navController.navigate(Screen.Add.createRoute()) },
+                        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                        text = { Text("Add Reminder", fontWeight = FontWeight.Bold) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
         ) { paddingValues ->
@@ -103,7 +126,8 @@ fun HomeScreen(navController: NavController) {
                 WelcomeSection(
                     userName = null, // TODO: Get from user preferences
                     reminders = reminders,
-                    themeSetting = currentTheme
+                    themeSetting = currentTheme,
+                    currentTime = currentTime
                 )
 
                 // Header
@@ -120,42 +144,44 @@ fun HomeScreen(navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
 
-                    IconButton(onClick = { showMenu = !showMenu }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                    }
+                    Box {
+                        IconButton(onClick = { showMenu = !showMenu }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                        }
 
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Calendar", style = AppTypography.bodyLarge) },
-                            onClick = {
-                                showMenu = false
-                                navController.navigate(Screen.Calendar.route)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Categories", style = AppTypography.bodyLarge) },
-                            onClick = {
-                                showMenu = false
-                                navController.navigate(Screen.Categories.route)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Settings", style = AppTypography.bodyLarge) },
-                            onClick = {
-                                showMenu = false
-                                navController.navigate(Screen.Settings.route)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Sign Out", style = AppTypography.bodyLarge) },
-                            onClick = {
-                                showMenu = false
-                                navController.navigate(Screen.SignOut.route)
-                            }
-                        )
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Calendar", style = AppTypography.bodyLarge) },
+                                onClick = {
+                                    showMenu = false
+                                    navController.navigate(Screen.Calendar.route)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Categories", style = AppTypography.bodyLarge) },
+                                onClick = {
+                                    showMenu = false
+                                    navController.navigate(Screen.Categories.route)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Settings", style = AppTypography.bodyLarge) },
+                                onClick = {
+                                    showMenu = false
+                                    navController.navigate(Screen.Settings.route)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sign Out", style = AppTypography.bodyLarge) },
+                                onClick = {
+                                    showMenu = false
+                                    navController.navigate(Screen.SignOut.route)
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -237,7 +263,8 @@ fun HomeScreen(navController: NavController) {
                             },
                             onDelete = { reminderId ->
                                 viewModel.deleteReminder(reminderId)
-                            }
+                            },
+                            currentTime = currentTime
                         )
                     }
 
@@ -247,15 +274,6 @@ fun HomeScreen(navController: NavController) {
                         modifier = Modifier.align(Alignment.TopCenter)
                     )
                 }
-
-                // Add Reminder Button
-                PrimaryButton(
-                    text = getOceanEnhancedText("Add Reminder", currentTheme),
-                    onClick = { navController.navigate(Screen.Add.createRoute()) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = getResponsivePadding(16.dp), vertical = getResponsivePadding(16.dp))
-                )
 
         // GPS Enable Dialog
         GpsEnableDialog(
@@ -267,98 +285,3 @@ fun HomeScreen(navController: NavController) {
 } // Closes Scaffold content lambda
     } // Closes ScreenBackground
 } // Closes HomeScreen Composable
-
-@Composable
-fun ReminderItem(
-    reminder: Reminder,
-    onReminderClick: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val createdTime = remember {
-        SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault())
-            .format(Date(reminder.time))
-    }
-
-    val reminderTime = remember {
-        SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault())
-            .format(Date(reminder.reminderTime))
-    }
-
-
-    SwipeToDelete(
-        onDelete = onDelete
-    ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable { onReminderClick() },
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (reminder.isLocationBased) {
-                            Icon(
-                                imageVector = Icons.Filled.LocationOn,
-                                contentDescription = "Location-based reminder",
-                                tint = MaterialTheme.colorScheme.tertiary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Time-based reminder",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = reminder.title,
-                            style = AppTypography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = reminder.description,
-                        style = AppTypography.bodyLarge,
-                        color = Color.Gray
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Reminder Time: $reminderTime",
-                        style = AppTypography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "Created Time: $createdTime",
-                        style = AppTypography.labelLarge,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    if (reminder.category.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = reminder.category,
-                            color = Color.White,
-                            modifier = Modifier
-                                .background(CategoryUtils.getCategoryColor(reminder.category) ?: Color.Gray, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = AppTypography.labelSmall
-                        )
-                    }
-                }
-            }
-    }
-}

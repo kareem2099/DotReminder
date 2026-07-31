@@ -32,216 +32,190 @@ fun PremiumReminderCard(
     reminder: Reminder,
     onReminderClick: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentTime: Long = System.currentTimeMillis()
 ) {
-    val createdTime = remember {
-        SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault())
-            .format(Date(reminder.time))
-    }
-
-    val reminderTime = remember {
+    val reminderTime = remember(reminder.reminderTime) {
         SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault())
             .format(Date(reminder.reminderTime))
     }
 
-    // Calculate if reminder is overdue (past due)
-    val isOverdue = remember {
-        reminder.reminderTime < System.currentTimeMillis()
+    // Calculate if reminder is overdue (past due) reactively against currentTime
+    val isOverdue = remember(currentTime, reminder.reminderTime) {
+        reminder.reminderTime < currentTime
     }
 
-    // Animate card background based on overdue status
-    val cardBackground by animateColorAsState(
-        targetValue = when {
-            isOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-            else -> MaterialTheme.colorScheme.surface
-        },
-        animationSpec = tween(300)
-    )
-
-    val cardBorderColor by animateColorAsState(
-        targetValue = when {
-            isOverdue -> MaterialTheme.colorScheme.error
-            else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-        },
-        animationSpec = tween(300)
-    )
+    // Accent color based on overdue status
+    val statusColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
     SwipeToDelete(
         onDelete = onDelete
     ) {
-        Card(
+        Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(16.dp),
-                    spotColor = cardBorderColor.copy(alpha = 0.1f)
-                )
                 .clip(RoundedCornerShape(16.dp))
-                .background(cardBackground)
                 .clickable { onReminderClick() },
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Transparent
-            ),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            shape = RoundedCornerShape(16.dp),
             border = androidx.compose.foundation.BorderStroke(
                 width = 1.dp,
-                color = cardBorderColor
+                color = if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
             )
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
             ) {
-                // Header Row with Icon and Priority
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                // Leading Status Accent Bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(5.dp)
+                        .background(statusColor)
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 ) {
-                    // Location/Time Icon
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        if (reminder.isLocationBased)
-                                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)
-                                        else
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        Color.Transparent
-                                    )
+                    // Header Row: Icon, Title & Status Badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Type Icon (Location or Notification)
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    color = if (reminder.isLocationBased)
+                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)
+                                    else
+                                        statusColor.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(10.dp)
                                 ),
-                                shape = RoundedCornerShape(12.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (reminder.isLocationBased)
-                                Icons.Default.LocationOn else Icons.Default.Notifications,
-                            contentDescription = if (reminder.isLocationBased)
-                                "Location-based reminder" else "Time-based reminder",
-                            tint = if (reminder.isLocationBased)
-                                MaterialTheme.colorScheme.tertiary
-                            else
-                                MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (reminder.isLocationBased)
+                                    Icons.Default.LocationOn else Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = if (reminder.isLocationBased)
+                                    MaterialTheme.colorScheme.tertiary
+                                else
+                                    statusColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
-                    // Title and Status
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        // Title
+                        Column(
+                            modifier = Modifier.weight(1f)
                         ) {
                             Text(
                                 text = reminder.title,
-                                style = AppTypography.titleLarge.copy(
+                                style = AppTypography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold
                                 ),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                                overflow = TextOverflow.Ellipsis
                             )
+                        }
 
-                            // Overdue indicator
-                            if (isOverdue) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = "Overdue",
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(16.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Status Badge Pill
+                        Surface(
+                            color = if (isOverdue)
+                                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+                            else
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (isOverdue) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Overdue",
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                }
+                                Text(
+                                    text = if (isOverdue) "Overdue" else "Upcoming",
+                                    style = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (isOverdue)
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    else
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }
+                    }
 
-                        // Status text
+                    // Description
+                    if (reminder.description.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = if (isOverdue) "Overdue" else "Upcoming",
-                            style = AppTypography.labelSmall,
-                            color = if (isOverdue)
-                                MaterialTheme.colorScheme.error
-                            else
-                                MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
+                            text = reminder.description,
+                            style = AppTypography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Description
-                if (reminder.description.isNotBlank()) {
-                    Text(
-                        text = reminder.description,
-                        style = AppTypography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
                     Spacer(modifier = Modifier.height(12.dp))
-                }
 
-                // Time Information
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Reminder Time
-                    Column {
-                        Text(
-                            text = "Reminder",
-                            style = AppTypography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = reminderTime,
-                            style = AppTypography.labelLarge.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    // Created Time
-                    Column(
-                        horizontalAlignment = Alignment.End
+                    // Time Information & Category
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Created",
-                            style = AppTypography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = createdTime,
-                            style = AppTypography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // Category Badge
-                if (reminder.category.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = CategoryUtils.getCategoryColor(reminder.category) ?: MaterialTheme.colorScheme.primaryContainer,
-                                shape = RoundedCornerShape(8.dp)
+                        // Reminder Time
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = statusColor,
+                                modifier = Modifier.size(14.dp)
                             )
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = reminder.category,
-                            style = AppTypography.labelSmall.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = reminderTime,
+                                style = AppTypography.labelMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = statusColor
+                            )
+                        }
+
+                        // Category Tag
+                        if (reminder.category.isNotBlank()) {
+                            Surface(
+                                color = CategoryUtils.getCategoryColor(reminder.category)?.copy(alpha = 0.2f)
+                                    ?: MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = reminder.category,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = AppTypography.labelSmall.copy(
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -1,8 +1,5 @@
 package com.FreeRave.remindme.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +21,6 @@ fun SwipeToDelete(
     content: @Composable () -> Unit
 ) {
     var showConfirmDialog by remember { mutableStateOf(false) }
-    var itemVisible by remember { mutableStateOf(true) }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
@@ -38,6 +34,8 @@ fun SwipeToDelete(
         }
     )
 
+    val currentOnDelete by rememberUpdatedState(onDelete)
+
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -48,8 +46,8 @@ fun SwipeToDelete(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        itemVisible = false
                         showConfirmDialog = false
+                        currentOnDelete()
                     }
                 ) {
                     Text("Yes")
@@ -67,41 +65,26 @@ fun SwipeToDelete(
         )
     }
 
-    // Handle deletion with animation
-    LaunchedEffect(itemVisible) {
-        if (!itemVisible) {
-            // Wait for the animation to complete before calling onDelete
-            kotlinx.coroutines.delay(300)
-            onDelete()
-        }
-    }
-
-    AnimatedVisibility(
-        visible = itemVisible,
-        exit = fadeOut(animationSpec = tween(durationMillis = 300))
-    ) {
-        SwipeToDismissBox(
-            state = dismissState,
-            enableDismissFromEndToStart = true,
-            enableDismissFromStartToEnd = false,
-            backgroundContent = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.errorContainer),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            },
-            content = { content() }
-        )
-    }
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromEndToStart = true,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        },
+        content = { content() }
+    )
 }

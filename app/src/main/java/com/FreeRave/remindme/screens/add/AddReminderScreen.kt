@@ -33,6 +33,7 @@ import com.FreeRave.remindme.ui.components.SmartTextField
 import com.FreeRave.remindme.ui.components.SmartCategorySuggestions
 import com.FreeRave.remindme.ui.components.SmartTimeSuggestions
 import com.FreeRave.remindme.ui.components.MapLocationPickerDialog
+import androidx.compose.material.icons.filled.AutoAwesome
 import com.FreeRave.remindme.utils.CategoryUtils
 import com.FreeRave.remindme.navigation.Screen
 import com.FreeRave.remindme.model.ReminderTemplate
@@ -199,6 +200,54 @@ fun AddReminderScreen(
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Filled.AutoAwesome,
+                                    contentDescription = "AI",
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Magic Prompt (AI) ✨",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = nlpInputText,
+                                    onValueChange = { addViewModel.onNlpInputChanged(it) },
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = { Text("e.g. Remind me to call Mom tomorrow at 5 PM") },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                    ),
+                                    maxLines = 2
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                FilledIconButton(
+                                    onClick = { addViewModel.parseNaturalLanguageInput() },
+                                    modifier = Modifier.size(56.dp),
+                                    colors = IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Icon(Icons.Filled.AutoAwesome, contentDescription = "Parse with AI")
+                                }
+                            }
+                        }
+                    }
                     // --- Smart Title Input ---
                     SmartTextField(
                         value = title,
@@ -449,7 +498,7 @@ fun AddReminderScreen(
                             label = { Text("Category (Optional)") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             modifier = Modifier
-                                .menuAnchor()
+                                .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth()
                         )
                         ExposedDropdownMenu(

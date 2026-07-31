@@ -30,7 +30,8 @@ fun AnimatedReminderList(
     reminders: List<Reminder>,
     onReminderClick: (Reminder) -> Unit,
     onDelete: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentTime: Long = System.currentTimeMillis()
 ) {
     val listState = rememberLazyListState()
 
@@ -38,7 +39,7 @@ fun AnimatedReminderList(
         state = listState,
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp)
     ) {
         items(
             items = reminders,
@@ -48,6 +49,7 @@ fun AnimatedReminderList(
                 reminder = reminder,
                 onReminderClick = { onReminderClick(reminder) },
                 onDelete = { onDelete(reminder.id) },
+                currentTime = currentTime,
                 modifier = Modifier.animateItem( // Changed from animateItemPlacement
                     fadeInSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -72,6 +74,7 @@ private fun AnimatedReminderItem(
     reminder: Reminder,
     onReminderClick: () -> Unit,
     onDelete: () -> Unit,
+    currentTime: Long,
     modifier: Modifier = Modifier
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -110,6 +113,7 @@ private fun AnimatedReminderItem(
             reminder = reminder,
             onReminderClick = onReminderClick,
             onDelete = onDelete,
+            currentTime = currentTime,
             modifier = Modifier
                 .graphicsLayer {
                     scaleX = animatedScale

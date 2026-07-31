@@ -1,14 +1,15 @@
 package com.FreeRave.remindme.service
 
 import android.content.Context
-import android.content.Intent
-import androidx.activity.result.ActivityResult
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import com.FreeRave.remindme.model.AuthProvider
 import com.FreeRave.remindme.model.User
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.tasks.await
@@ -17,38 +18,41 @@ import javax.inject.Singleton
 
 @Singleton
 class GoogleAuthServiceImpl @Inject constructor(
-    private val firebaseAuth: FirebaseAuth // Using injected FirebaseAuth
-    // If you have a FirestoreService to save/update user, inject it here too
-    // private val firestoreService: FirebaseService
+    private val firebaseAuth: FirebaseAuth
 ) : GoogleAuthServiceInterface {
 
     // Retrieved from google-services.json (client_type: 3)
     private val webClientId = "12141681876-qr8p7spogfpkqb7q49o3ohas2l5cdf42.apps.googleusercontent.com"
 
-    private fun getGoogleSignInClient(context: Context): GoogleSignInClient {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(webClientId)
-            .requestEmail()
-            .build()
-        return GoogleSignIn.getClient(context, gso)
-    }
-
-    override fun getSignInIntent(context: Context): Intent {
-        return getGoogleSignInClient(context).signInIntent
-    }
-
-    override suspend fun handleSignInResultAndAuthenticate(
-        result: ActivityResult,
+    override suspend fun signInWithGoogleCredentialManager(
+        context: Context,
         onSuccess: (User) -> Unit,
         onFailure: (Exception) -> Unit
     ) {
         try {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            val account: GoogleSignInAccount? = task.getResult(ApiException::class.java)
+            val credentialManager = CredentialManager.create(context)
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(webClientId)
+                .setAutoSelectEnabled(false)
+                .build()
 
-            if (account?.idToken != null) {
-                val credential = GoogleAuthProvider.getCredential(account.idToken!!, null) // idToken is non-null here
-                val authResult = firebaseAuth.signInWithCredential(credential).await()
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+
+            val result = credentialManager.getCredential(
+                context = context,
+                request = request
+            )
+
+            val credential = result.credential
+            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val idToken = googleIdTokenCredential.idToken
+                val authCredential = GoogleAuthProvider.getCredential(idToken, null)
+                val authResult = firebaseAuth.signInWithCredential(authCredential).await()
+
                 authResult.user?.let { firebaseUser ->
                     val user = User(
                         id = firebaseUser.uid,
@@ -56,34 +60,27 @@ class GoogleAuthServiceImpl @Inject constructor(
                         email = firebaseUser.email ?: "",
                         photoUrl = firebaseUser.photoUrl?.toString(),
                         isEmailVerified = firebaseUser.isEmailVerified,
-                        provider = com.FreeRave.remindme.model.AuthProvider.GOOGLE // Set provider
+                        provider = AuthProvider.GOOGLE
                     )
-                    // Optionally: Save/update user in Firestore here
-                    // firestoreService.saveOrUpdateUser(user, { onSuccess(user) }, onFailure)
                     onSuccess(user)
                 } ?: onFailure(Exception("Firebase user not found after Google Sign-In."))
             } else {
-                // Handle case where account is null or idToken is null
-                val message = if (account == null) "Google Sign-In failed to retrieve account." else "Google Sign-In failed, ID Token missing."
-                // Construct Status object first, then ApiException
-                val status = com.google.android.gms.common.api.Status(com.google.android.gms.common.api.CommonStatusCodes.INTERNAL_ERROR, message)
-                onFailure(ApiException(status))
+                onFailure(Exception("Unrecognized credential type returned."))
             }
-        } catch (e: ApiException) {
-            onFailure(e) // Forward API exceptions (e.g., user cancelled)
+        } catch (e: GetCredentialException) {
+            onFailure(e)
         } catch (e: Exception) {
-            onFailure(e) // Forward other exceptions
+            onFailure(e)
         }
     }
 
     override suspend fun signOut(context: Context, onComplete: () -> Unit) {
         try {
-            // It's important that getGoogleSignInClient is called with a valid context
-            // that was used for sign-in, or at least an application context.
-            getGoogleSignInClient(context).signOut().await()
-            firebaseAuth.signOut() // Sign out from Firebase
+            val credentialManager = CredentialManager.create(context)
+            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+            firebaseAuth.signOut()
         } catch (e: Exception) {
-            // Log error or handle if necessary, e.g., Timber.e(e, "Error during sign out")
+            // Log error
         } finally {
             onComplete()
         }

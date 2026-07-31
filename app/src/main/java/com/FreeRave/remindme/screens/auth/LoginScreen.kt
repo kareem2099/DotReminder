@@ -62,16 +62,6 @@ fun LoginScreen(navController: NavController) {
 
     val shakeOffset = remember { Animatable(0f) }
 
-    val googleSignInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            coroutineScope.launch { viewModel.handleGoogleSignInResult(result) }
-        } else {
-            coroutineScope.launch { snackbarHostState.showSnackbar("Google Sign-In cancelled or failed.") }
-        }
-    }
-
     LaunchedEffect(rememberedEmailFromVM, rememberMeEnabledFromVM) {
         if (rememberMeEnabledFromVM && !rememberedEmailFromVM.isNullOrEmpty() && email.isEmpty()) {
             email = rememberedEmailFromVM!!
@@ -222,15 +212,7 @@ fun LoginScreen(navController: NavController) {
                                 }
                             },
                             onGoogleSignInClick = {
-                                coroutineScope.launch {
-                                    try {
-                                        val signInIntent: Intent =
-                                            viewModel.getGoogleSignInIntent(context)
-                                        googleSignInLauncher.launch(signInIntent)
-                                    } catch (e: Exception) {
-                                        snackbarHostState.showSnackbar("Could not start Google Sign-In: ${e.localizedMessage}")
-                                    }
-                                }
+                                viewModel.signInWithGoogleCredentialManager(context)
                             },
                             onFacebookSignInClick = {
                                 val activity = context as? ComponentActivity

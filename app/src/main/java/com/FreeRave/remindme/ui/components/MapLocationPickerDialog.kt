@@ -65,13 +65,13 @@ fun MapLocationPickerDialog(
 
         // Update circle
         circle?.remove()
-        val radiusValue = radius.toFloatOrNull() ?: 200f
+        val radiusValue = radius.toDoubleOrNull() ?: 200.0
         circle = googleMap?.addCircle(
             CircleOptions()
                 .center(latLng)
-                .radius(radiusValue.toDouble())
+                .radius(radiusValue)
                 .strokeColor(0xFF4285F4.toInt()) // Blue stroke
-                .fillColor(0x1F4285F4.toInt()) // Semi-transparent blue fill
+                .fillColor(0x1F4285F4) // Semi-transparent blue fill
                 .strokeWidth(2f)
         )
 
@@ -120,13 +120,13 @@ fun MapLocationPickerDialog(
     fun updateRadiusCircle() {
         selectedLocation?.let { latLng ->
             circle?.remove()
-            val radiusValue = radius.toFloatOrNull() ?: 200f
+            val radiusValue = radius.toDoubleOrNull() ?: 200.0
             circle = googleMap?.addCircle(
                 CircleOptions()
                     .center(latLng)
-                    .radius(radiusValue.toDouble())
+                    .radius(radiusValue)
                     .strokeColor(0xFF4285F4.toInt())
-                    .fillColor(0x1F4285F4.toInt())
+                    .fillColor(0x1F4285F4)
                     .strokeWidth(2f)
             )
         }

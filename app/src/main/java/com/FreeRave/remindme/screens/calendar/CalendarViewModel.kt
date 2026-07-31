@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
-import java.util.GregorianCalendar
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
@@ -26,17 +25,10 @@ class CalendarViewModel @Inject constructor(
     private val _selectedDateReminders = MutableStateFlow<List<Reminder>>(emptyList())
     val selectedDateReminders: StateFlow<List<Reminder>> = _selectedDateReminders
 
-    private val _selectedDateInMillis = MutableStateFlow(Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis)
+    private val _selectedDateInMillis = MutableStateFlow(getStartOfDay(System.currentTimeMillis()))
     val selectedDateInMillis: StateFlow<Long> = _selectedDateInMillis
 
-    init {
-        loadReminders()
-    }
+    init { loadReminders() }
 
     fun loadReminders() {
         viewModelScope.launch {
@@ -61,39 +53,51 @@ class CalendarViewModel @Inject constructor(
 
     private fun updateSelectedDateReminders() {
         val selectedMillis = _selectedDateInMillis.value
-        val startOfDay = selectedMillis
-        val endOfDay = selectedMillis + (24 * 60 * 60 * 1000) - 1 // End of day
+        val endOfDay = selectedMillis + (24 * 60 * 60 * 1000) - 1
 
-        val daysReminders = _reminders.value.filter { reminder ->
-            reminder.reminderTime in startOfDay..endOfDay ||
-            (reminder.isRecurring && isRecurringOnDate(reminder, selectedMillis))
-        }
-        _selectedDateReminders.value = daysReminders
+        _selectedDateReminders.value = _reminders.value
+            .filter { reminder ->
+                val isExactDay = reminder.reminderTime in selectedMillis..endOfDay
+                isExactDay || (reminder.isRecurring && isRecurringOnDate(reminder, selectedMillis))
+            }
+            .sortedBy { it.reminderTime }
     }
 
-    private fun isRecurringOnDate(reminder: Reminder, dateMillis: Long): Boolean {
-        if (reminder.recurrenceIntervalMillis == null || reminder.recurrenceIntervalMillis <= 0) return false
-        val reminderTime = reminder.reminderTime
+    private fun isRecurringOnDate(reminder: Reminder, targetDateMillis: Long): Boolean {
+        val interval = reminder.recurrenceIntervalMillis ?: return false
+        if (interval <= 0) return false
 
-        if (dateMillis < reminderTime) return false
+        val reminderStartOfDay = getStartOfDay(reminder.reminderTime)
+        val targetStartOfDay = getStartOfDay(targetDateMillis)
 
-        val diff = dateMillis - reminderTime
-        return (diff % reminder.recurrenceIntervalMillis) == 0L
+        if (targetStartOfDay < reminderStartOfDay) return false
+
+        val diff = targetStartOfDay - reminderStartOfDay
+        return (diff % interval) == 0L
     }
 
     fun hasRemindersOnDate(year: Int, month: Int, day: Int): Boolean {
-        val cal = GregorianCalendar(year, month, day, 0, 0, 0).apply { set(Calendar.MILLISECOND, 0) }
-        val startOfDay = cal.timeInMillis
+        if (_reminders.value.isEmpty()) return false // ✅ fast exit
+
+        val startOfDay = Calendar.getInstance().apply {
+            set(year, month, day, 0, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
         val endOfDay = startOfDay + (24 * 60 * 60 * 1000) - 1
 
         return _reminders.value.any { reminder ->
-            val reminderTime = reminder.reminderTime
-            (reminderTime in startOfDay..endOfDay) ||
-            (reminder.isRecurring && isRecurringOnDate(reminder, startOfDay))
+            val isExactDay = reminder.reminderTime in startOfDay..endOfDay
+            isExactDay || (reminder.isRecurring && isRecurringOnDate(reminder, startOfDay))
         }
     }
 
-    fun getSelectedDateCalendar(): Calendar {
-        return Calendar.getInstance().apply { timeInMillis = _selectedDateInMillis.value }
+    private fun getStartOfDay(timeInMillis: Long): Long {
+        return Calendar.getInstance().apply {
+            this.timeInMillis = timeInMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -11,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,28 +27,24 @@ fun WelcomeSection(
     userName: String? = null,
     reminders: List<Reminder>,
     themeSetting: ThemeSetting,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    currentTime: Long = System.currentTimeMillis()
 ) {
-    val currentTime = remember { System.currentTimeMillis() }
     val dateFormat = remember { SimpleDateFormat("EEEE, MMMM d", Locale.getDefault()) }
     val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
 
-    val currentDate = remember { dateFormat.format(Date(currentTime)) }
-    val currentTimeString = remember { timeFormat.format(Date(currentTime)) }
+    val currentDate = dateFormat.format(Date(currentTime))
+    val currentTimeString = timeFormat.format(Date(currentTime))
 
     // Calculate stats
     val totalReminders = reminders.size
     val upcomingReminders = reminders.count { it.reminderTime > currentTime }
     val overdueReminders = reminders.count { it.reminderTime < currentTime }
-    val completedToday = reminders.count {
-        val reminderDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date(it.reminderTime))
-        val today = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date(currentTime))
-        reminderDate == today && it.reminderTime < currentTime
-    }
 
+    val calendar = remember(currentTime) { Calendar.getInstance().apply { timeInMillis = currentTime } }
     val greeting = when {
-        Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 12 -> "Good morning"
-        Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < 17 -> "Good afternoon"
+        calendar.get(Calendar.HOUR_OF_DAY) < 12 -> "Good morning"
+        calendar.get(Calendar.HOUR_OF_DAY) < 17 -> "Good afternoon"
         else -> "Good evening"
     }
 
@@ -64,7 +60,7 @@ fun WelcomeSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = getOceanEnhancedText("$greeting, $displayName!", themeSetting),
+                text = getOceanEnhancedText("$greeting, $displayName", themeSetting),
                 style = AppTypography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -90,7 +86,7 @@ fun WelcomeSection(
             StatCard(
                 title = "Total",
                 value = totalReminders.toString(),
-                icon = Icons.Default.List,
+                icon = Icons.AutoMirrored.Filled.List,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f)
             )
@@ -114,49 +110,6 @@ fun WelcomeSection(
                 modifier = Modifier.weight(1f)
             )
         }
-
-        // Completed Today Badge (only show if > 0)
-        if (completedToday > 0) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                MaterialTheme.colorScheme.secondaryContainer
-                            )
-                        )
-                    )
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Completed",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = "Great job! You completed $completedToday reminder${if (completedToday != 1) "s" else ""} today",
-                        style = AppTypography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -168,24 +121,23 @@ private fun StatCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Surface(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        ),
-        shape = RoundedCornerShape(12.dp)
+        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.25f))
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(36.dp)
                     .background(
                         color = color.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(10.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -193,16 +145,16 @@ private fun StatCard(
                     imageVector = icon,
                     contentDescription = title,
                     tint = color,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = value,
-                style = AppTypography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
+                style = AppTypography.headlineSmall.copy(
+                    fontWeight = FontWeight.ExtraBold
                 ),
                 color = color
             )
@@ -211,8 +163,10 @@ private fun StatCard(
 
             Text(
                 text = title,
-                style = AppTypography.labelSmall,
-                color = color.copy(alpha = 0.8f)
+                style = AppTypography.labelMedium.copy(
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

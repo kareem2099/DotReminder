@@ -178,7 +178,11 @@ class AddReminderViewModel @Inject constructor(
                 val jsonResponse = geminiService.parseReminderToJSON(inputText)
 
                 if (jsonResponse != null) {
-                    val jsonObject = JSONObject(jsonResponse)
+                    val cleanJson = jsonResponse
+                        .replace("```json", "")
+                        .replace("```", "")
+                        .trim()
+                    val jsonObject = JSONObject(cleanJson)
 
                     _title.update { jsonObject.optString("title", inputText) }
 

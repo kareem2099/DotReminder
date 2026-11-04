@@ -4,7 +4,7 @@ A reminder app for Android built with Kotlin, Jetpack Compose and Firebase.
 
 [![Android 16](https://img.shields.io/badge/Target-Android_16_API_36-green)](https://developer.android.com/about/versions/16)
 [![Version](https://img.shields.io/badge/Version-0.0.7-blue)](https://github.com/kareem2099/DotReminder)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
 ## Current release
 
@@ -102,4 +102,6 @@ Open an issue or a pull request against this repository. Keep production credent
 
 ## License
 
-[MIT](LICENSE).
+Copyright 2026 FreeRave(kareem).
+
+Licensed under the [Apache License, Version 2.0](LICENSE).

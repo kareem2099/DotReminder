@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Focused unit, isolated Compose UI, reminder-device and emulator-rule review coverage.
 
 ### Changed
+- Changed the project license from MIT to Apache License 2.0.
 - Rebuilt the app screens around shared glass surfaces, responsive forms and reusable UI components.
 - Updated Settings to show the actual build version **0.0.7 (8)**.
 - Retained **compileSdk 36 / targetSdk 36 (Android 16)** and **minSdk 29 (Android 10)**; version code increased from 7 to 8 for the new bundle.

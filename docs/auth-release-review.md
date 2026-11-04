@@ -215,3 +215,13 @@ SDK disclosure references:
 - https://support.google.com/analytics/answer/11582702
 - https://firebase.google.com/docs/android/play-data-disclosure
 - https://support.google.com/googleplay/android-developer/answer/10787469
+
+## Review request submitted — 2026-11-04
+
+After inspecting the final list, the three changes (production 8 / 0.0.7,
+privacy-policy URL and Data safety) were sent for Google review. Publishing
+overview visibly moved them to **Changes in review**. Quick checks were still
+running and the page explained that dispatch completes after those checks
+succeed. **Managed publishing remains on**; this submission does not publish
+the new version automatically. Unrelated pre-existing ready-to-publish changes
+were not published. Android source was pushed to `main` in `a6f6040`.

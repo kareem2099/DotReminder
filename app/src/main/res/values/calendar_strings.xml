@@ -1,0 +1,26 @@
+<resources>
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_intro">Your reminders, one day at a time.</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_previous_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_choose_date">Choose a date</string>
+    <string name="calendar_month_summary">%1$s · %2$s</string>
+    <string name="calendar_today_date">Today, %1$s</string>
+    <string name="calendar_day_accessibility">%1$s, %2$s</string>
+    <string name="calendar_empty_title">No reminders for this day</string>
+    <string name="calendar_empty_body">Choose another date to see what’s planned.</string>
+    <string name="calendar_back_today">Back to today</string>
+    <string name="calendar_loading">Loading your reminders…</string>
+    <string name="calendar_error_title">Couldn’t refresh your calendar</string>
+    <string name="calendar_error_body">Check your connection and try again.</string>
+    <string name="calendar_retry">Try again</string>
+    <plurals name="calendar_reminder_count">
+        <item quantity="one">%d reminder</item>
+        <item quantity="other">%d reminders</item>
+    </plurals>
+    <plurals name="calendar_planned_days">
+        <item quantity="one">%d planned day</item>
+        <item quantity="other">%d planned days</item>
+    </plurals>
+</resources>

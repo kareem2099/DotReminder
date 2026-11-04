@@ -2,7 +2,6 @@ package com.FreeRave.remindme.service
 
 import com.FreeRave.remindme.model.Category
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -64,7 +63,6 @@ class CategoryService @Inject constructor(private val db: FirebaseFirestore) {
     fun getCategories(userId: String): Flow<List<Category>> = callbackFlow {
         val listener = categoriesCollection
             .whereEqualTo("userId", userId)
-            .orderBy("name", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     close(e)

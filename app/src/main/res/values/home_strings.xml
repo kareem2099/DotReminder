@@ -1,0 +1,42 @@
+<resources>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_name">%1$s, %2$s</string>
+    <string name="home_greeting_default_name">there</string>
+    <string name="home_intro">A little clarity for your day.</string>
+    <string name="home_total">All reminders</string>
+    <string name="home_upcoming">Upcoming</string>
+    <string name="home_overdue">Overdue</string>
+    <string name="home_library">Your reminders</string>
+    <string name="home_search">Find a reminder…</string>
+    <string name="home_clear_search">Clear search</string>
+    <string name="home_filters">Reminder filters</string>
+    <string name="home_all">All</string>
+    <string name="home_today">Today</string>
+    <string name="home_week">This week</string>
+    <string name="home_completed">Completed</string>
+    <string name="home_all_categories">All categories</string>
+    <string name="home_new_reminder">New reminder</string>
+    <string name="home_ai_assistant">AI assistant</string>
+    <string name="home_menu">More options</string>
+    <string name="home_calendar">Calendar</string>
+    <string name="home_categories">Categories</string>
+    <string name="home_templates">Templates</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_sign_out">Sign out</string>
+    <string name="home_empty_title">Make room for what matters.</string>
+    <string name="home_empty_body">A thought, a plan, a little nudge. Give it a time and we’ll remind you.</string>
+    <string name="home_empty_action">Create a reminder</string>
+    <string name="home_no_results_title">Nothing here just yet.</string>
+    <string name="home_no_results_body">Try another search or change your filters to find your reminders.</string>
+    <string name="home_reset_filters">Reset filters</string>
+    <string name="home_loading">Getting your day ready…</string>
+    <string name="home_location">Location reminder</string>
+    <string name="home_scheduled">Scheduled reminder</string>
+    <string name="home_recurring">Repeating reminder</string>
+    <plurals name="home_result_count">
+        <item quantity="one">%d reminder</item>
+        <item quantity="other">%d reminders</item>
+    </plurals>
+</resources>

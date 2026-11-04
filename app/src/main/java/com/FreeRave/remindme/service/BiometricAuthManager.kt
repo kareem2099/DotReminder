@@ -21,7 +21,7 @@ class BiometricAuthManager @Inject constructor() {
 
     fun getBiometricAvailability(context: Context): BiometricAvailability {
         val biometricManager = BiometricManager.from(context)
-        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
+        return when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
             BiometricManager.BIOMETRIC_SUCCESS -> BiometricAvailability.AVAILABLE
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> BiometricAvailability.NO_HARDWARE
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> BiometricAvailability.HARDWARE_UNAVAILABLE
@@ -41,7 +41,7 @@ class BiometricAuthManager @Inject constructor() {
         onSuccess: () -> Unit,
         onFailedAttempt: () -> Unit, // Called when a single attempt fails but prompt is still active
         onError: (errorCode: Int, errString: CharSequence) -> Unit // Called for unrecoverable errors
-    ) {
+    ): BiometricPrompt {
         val executor = ContextCompat.getMainExecutor(activity)
         val biometricPrompt = BiometricPrompt(activity, executor,
             object : BiometricPrompt.AuthenticationCallback() {
@@ -67,9 +67,10 @@ class BiometricAuthManager @Inject constructor() {
             .setNegativeButtonText(negativeButtonText)
             // For strong biometrics, you might not need setConfirmationRequired(false)
             // .setConfirmationRequired(false) // Allow implicit confirmation for some biometrics
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
             .build()
 
         biometricPrompt.authenticate(promptInfo)
+        return biometricPrompt
     }
 }

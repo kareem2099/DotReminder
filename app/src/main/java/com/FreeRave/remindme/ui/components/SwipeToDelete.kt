@@ -12,12 +12,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.FreeRave.remindme.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToDelete(
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(16.dp),
     content: @Composable () -> Unit
 ) {
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -41,8 +46,8 @@ fun SwipeToDelete(
             onDismissRequest = {
                 showConfirmDialog = false
             },
-            title = { Text("Delete Reminder") },
-            text = { Text("Do you want to remove this reminder?") },
+            title = { Text(stringResource(R.string.polish_delete_reminder)) },
+            text = { Text(stringResource(R.string.polish_delete_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -50,7 +55,7 @@ fun SwipeToDelete(
                         currentOnDelete()
                     }
                 ) {
-                    Text("Yes")
+                    Text(stringResource(R.string.polish_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -59,30 +64,33 @@ fun SwipeToDelete(
                         showConfirmDialog = false
                     }
                 ) {
-                    Text("No")
+                    Text(stringResource(R.string.polish_keep))
                 }
             }
         )
     }
 
     SwipeToDismissBox(
+        modifier = modifier,
         state = dismissState,
         enableDismissFromEndToStart = true,
         enableDismissFromStartToEnd = false,
         backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.errorContainer),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(16.dp)
-                )
+            if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.errorContainer),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.polish_delete),
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         },
         content = { content() }

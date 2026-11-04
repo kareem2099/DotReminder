@@ -3,6 +3,11 @@ package com.FreeRave.remindme.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.FreeRave.remindme.security.lock.AppLockGate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -37,6 +42,8 @@ fun AppNavGraph(
 
     // Check authentication state
     val loginState by authViewModel.loginState.collectAsState()
+    var forceLoginStart by rememberSaveable { mutableStateOf(false) }
+    var redirectToLogin by rememberSaveable { mutableStateOf(false) }
 
     // Determine destination after splash based on authentication
     val destinationAfterSplash = when (loginState) {
@@ -49,9 +56,10 @@ fun AppNavGraph(
         else -> Screen.Login.route
     }
 
+    AppLockGate(onRequireLogin = { forceLoginStart = true; redirectToLogin = true }) {
     NavHost(
         navController = navController,
-        startDestination = destinationAfterSplash,
+        startDestination = if (forceLoginStart) Screen.Login.route else destinationAfterSplash,
         modifier = modifier
     ) {
         composable(Screen.Login.route) {
@@ -61,12 +69,7 @@ fun AppNavGraph(
         composable(Screen.Splash.route) { /* Handled by MainActivity */ }
 
         composable(Screen.SignUp.route) {
-            val viewModel: AuthViewModel = hiltViewModel()
-            SignUpScreen(
-                navController = navController,
-                authService = viewModel.firebaseAuthService,
-                verificationService = viewModel.verificationService
-            )
+            SignUpScreen(navController)
         }
 
         composable(Screen.Home.route) {
@@ -77,8 +80,8 @@ fun AppNavGraph(
             CalendarScreen(navController)
         }
 
-        composable(Screen.Add.route) {
-            AddReminderScreen(navController)
+        composable(Screen.Add.route) { entry ->
+            AddReminderScreen(navController, entry)
         }
 
         composable(Screen.Edit.route) { backStackEntry ->
@@ -103,15 +106,11 @@ fun AppNavGraph(
         }
 
         composable(Screen.VerifyEmail.route) {
-            val viewModel: AuthViewModel = hiltViewModel()
-            VerifyEmailScreen(
-                navController = navController,
-                authService = viewModel.firebaseAuthService
-            )
+            VerifyEmailScreen(navController)
         }
 
-        composable(Screen.AiChat.route) {
-            AiChatScreen(navController)
+        composable(Screen.AiChat.route) { entry ->
+            AiChatScreen(navController, entry)
         }
 
         composable(Screen.Categories.route) {
@@ -125,5 +124,12 @@ fun AppNavGraph(
         composable(Screen.Support.route) {
             SupportScreen(navController)
         }
+    }
+    LaunchedEffect(redirectToLogin) {
+        if (redirectToLogin) {
+            navController.navigate(Screen.Login.route) { popUpTo(navController.graph.id) { inclusive = true }; launchSingleTop = true }
+            redirectToLogin = false
+        }
+    }
     }
 }

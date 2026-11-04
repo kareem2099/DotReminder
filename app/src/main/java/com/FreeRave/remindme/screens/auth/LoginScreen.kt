@@ -1,253 +1,101 @@
 package com.FreeRave.remindme.screens.auth
 
-import android.app.Activity
-import android.content.Intent
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.activity.compose.LocalActivity
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalResources
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.FreeRave.remindme.MainViewModel
-import com.FreeRave.remindme.data.ThemeSetting
+import com.FreeRave.remindme.R
 import com.FreeRave.remindme.navigation.Screen
+import com.FreeRave.remindme.screens.auth.components.PasswordResetDialog
 import com.FreeRave.remindme.service.BiometricAvailability
-import com.FreeRave.remindme.ui.components.*
-import com.FreeRave.remindme.ui.layout.*
-import com.FreeRave.remindme.ui.responsive.*
-import com.FreeRave.remindme.ui.theme.OceanBlueBackground
-import com.FreeRave.remindme.utils.ValidationUtils
+import com.FreeRave.remindme.ui.theme.GlassTheme
 import kotlinx.coroutines.launch
+import com.FreeRave.remindme.security.mfa.MfaChallengeDialog
+import com.FreeRave.remindme.ui.components.SecureWindowEffect
 
 @Composable
-fun LoginScreen(navController: NavController) {
-    val context = LocalContext.current
-    val viewModel: AuthViewModel = hiltViewModel()
-    val mainViewModel: MainViewModel = hiltViewModel()
-    val loginState by viewModel.loginState.collectAsStateWithLifecycle()
-    val rememberedEmailFromVM by viewModel.rememberedEmail.collectAsStateWithLifecycle()
-    val rememberMeEnabledFromVM by viewModel.rememberMeEnabled.collectAsStateWithLifecycle()
-    val biometricLoginEnabledUserPref by viewModel.biometricLoginEnabled.collectAsStateWithLifecycle()
-    val biometricAuthState by viewModel.biometricAuthState.collectAsStateWithLifecycle()
-    val currentTheme by mainViewModel.currentTheme.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
+fun LoginScreen(navController: NavController, viewModel: AuthViewModel = hiltViewModel()) {
+    val resources = LocalResources.current
+    val activity = LocalActivity.current
+    val login by viewModel.loginState.collectAsStateWithLifecycle()
+    val secondFactor by viewModel.secondFactorState.collectAsStateWithLifecycle()
+    val method by viewModel.activeLoginMethod.collectAsStateWithLifecycle()
+    val reset by viewModel.passwordResetState.collectAsStateWithLifecycle()
+    val storedEmail by viewModel.rememberedEmail.collectAsStateWithLifecycle()
+    val rememberEmail by viewModel.rememberMeEnabled.collectAsStateWithLifecycle()
+    val biometricPreference by viewModel.biometricLoginEnabled.collectAsStateWithLifecycle()
+    val biometric by viewModel.biometricAuthState.collectAsStateWithLifecycle()
+    val preferenceError by viewModel.preferenceError.collectAsStateWithLifecycle()
+    var availability by remember { mutableStateOf(viewModel.getBiometricAvailability()) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) availability = viewModel.getBiometricAvailability()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer); viewModel.clearSecondFactor() }
+    }
 
-    val biometricAvailability = remember { viewModel.getBiometricAvailability() }
-
-    var email by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var emailEdited by rememberSaveable { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
-    var emailError by remember { mutableStateOf(false) }
-    var passwordError by remember { mutableStateOf(false) }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var triggerShake by remember { mutableStateOf(false) }
-    var resetRequested by remember { mutableStateOf(false) }
-
-    val shakeOffset = remember { Animatable(0f) }
-
-    LaunchedEffect(rememberedEmailFromVM, rememberMeEnabledFromVM) {
-        if (rememberMeEnabledFromVM && !rememberedEmailFromVM.isNullOrEmpty() && email.isEmpty()) {
-            email = rememberedEmailFromVM!!
+    var submitted by rememberSaveable { mutableStateOf(false) }
+    var showReset by rememberSaveable { mutableStateOf(false) }
+    var activityError by remember { mutableStateOf<String?>(null) }
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val busy = login is AuthViewModel.LoginState.Loading || login is AuthViewModel.LoginState.SecondFactor || reset is PasswordResetState.Loading
+    SecureWindowEffect(password.isNotEmpty() || secondFactor != null)
+    val validation = validateLogin(email, password)
+    LaunchedEffect(storedEmail, rememberEmail) {
+        email = rememberedEmailForForm(email, emailEdited, rememberEmail, storedEmail)
+    }
+    LaunchedEffect(login) {
+        if (login is AuthViewModel.LoginState.SecondFactor) password = ""
+        if (login is AuthViewModel.LoginState.Success && navController.currentBackStackEntry?.destination?.route == Screen.Login.route) {
+            password = ""
+            navController.navigate(Screen.Home.route) { popUpTo(Screen.Login.route) { inclusive = true }; launchSingleTop = true }
         }
     }
-
-    LaunchedEffect(Unit) {
-        if (rememberMeEnabledFromVM &&
-            !rememberedEmailFromVM.isNullOrEmpty() &&
-            biometricLoginEnabledUserPref &&
-            biometricAvailability == BiometricAvailability.AVAILABLE
-        ) {
-            if (context is FragmentActivity) {
-                viewModel.triggerBiometricAuth(context)
-            } else {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Cannot initiate biometric auth: Invalid context.")
-                }
-            }
+    LaunchedEffect(reset) {
+        if (reset is PasswordResetState.Sent) {
+            showReset = false
+            viewModel.resetPasswordResetState()
+            scope.launch { snackbar.showSnackbar(resources.getString(R.string.login_reset_sent)) }
         }
     }
-
-    LaunchedEffect(biometricAuthState) {
-        when (val state = biometricAuthState) {
-            is AuthViewModel.BiometricAuthState.Error ->
-                snackbarHostState.showSnackbar(state.message)
-            is AuthViewModel.BiometricAuthState.FailedAttempt ->
-                if (state.remaining > 0)
-                    snackbarHostState.showSnackbar("Biometric failed. ${state.remaining} attempts remaining.")
-            else -> {}
-        }
-    }
-
-    LaunchedEffect(loginState) {
-        when (val state = loginState) {
-            is AuthViewModel.LoginState.Success -> {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Login.route) { inclusive = true }
-                }
-            }
-            is AuthViewModel.LoginState.Error -> {
-                triggerShake = true
-                snackbarHostState.showSnackbar(state.message)
-            }
-            else -> {}
-        }
-    }
-
-    LaunchedEffect(triggerShake) {
-        if (triggerShake) {
-            shakeOffset.snapTo(0f)
-            shakeOffset.animateTo(0f, keyframes {
-                durationMillis = 400
-                -10f at 50; 10f at 100; -8f at 150; 8f at 200; -5f at 250; 5f at 300; 0f at 350
-            })
-            triggerShake = false
-        }
-    }
-
-    val formAnim = remember { MutableTransitionState(false) }
-    LaunchedEffect(Unit) { formAnim.targetState = true }
-
-    val isSystemDarkTheme = isSystemInDarkTheme()
-    val resolvedUseDarkTheme = remember(currentTheme, isSystemDarkTheme) {
-        when (currentTheme) {
-            ThemeSetting.LIGHT -> false
-            ThemeSetting.DARK -> true
-            else -> isSystemDarkTheme
-        }
-    }
-
-    // Instead of ScreenBackground — OceanBlueBackground directly
-    OceanBlueBackground(
-        themeSetting = currentTheme,
-        useDarkTheme = resolvedUseDarkTheme
-    ) {
-        Scaffold(
-            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-        ) { paddingValues ->
-
-            AdaptiveContainer { _, containerModifier ->
-                AnimatedVisibility(
-                    visibleState = formAnim,
-                    enter = fadeIn() + slideInVertically(
-                        initialOffsetY = { it / 3 },
-                        animationSpec = tween(700)
-                    ),
-                    exit = fadeOut()
-                ) {
-                    AdaptiveColumn(
-                        modifier = containerModifier.padding(paddingValues),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        scrollable = true
-                    ) {
-                        LoginBranding(modifier = Modifier.offset(x = shakeOffset.value.dp))
-
-                        AdaptiveSpacer(getResponsiveSpacing(32.dp))
-
-                        LoginForm(
-                            email = email,
-                            onEmailChange = {
-                                email = it
-                                emailError = !ValidationUtils.isValidEmail(it)
-                            },
-                            emailError = emailError,
-                            password = password,
-                            onPasswordChange = {
-                                password = it
-                                passwordError = it.length < 8
-                            },
-                            passwordError = passwordError,
-                            passwordVisible = passwordVisible,
-                            onPasswordVisibilityChange = { passwordVisible = !passwordVisible },
-                            onForgotPasswordClick = {
-                                if (ValidationUtils.isValidEmail(email)) {
-                                    resetRequested = true
-                                    coroutineScope.launch {
-                                        viewModel.sendPasswordResetEmail(email)
-                                        snackbarHostState.showSnackbar("Password reset email sent to $email")
-                                        resetRequested = false
-                                    }
-                                } else {
-                                    emailError = true
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Enter a valid email to reset password")
-                                    }
-                                }
-                            },
-                            rememberMeChecked = rememberMeEnabledFromVM,
-                            onRememberMeChange = viewModel::userToggledRememberMe,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        AdaptiveSpacer(getResponsiveSpacing(24.dp))
-
-                        LoginActions(
-                            isLoading = loginState is AuthViewModel.LoginState.Loading,
-                            isLoginButtonEnabled = loginState !is AuthViewModel.LoginState.Loading,
-                            onLoginClick = {
-                                emailError = !ValidationUtils.isValidEmail(email)
-                                passwordError = password.length < 8
-                                if (!emailError && !passwordError) {
-                                    viewModel.loginWithEmail(email, password)
-                                } else {
-                                    triggerShake = true
-                                }
-                            },
-                            onGoogleSignInClick = {
-                                viewModel.signInWithGoogleCredentialManager(context)
-                            },
-                            onFacebookSignInClick = {
-                                val activity = context as? ComponentActivity
-                                if (activity != null) {
-                                    viewModel.signInWithFacebook(activity)
-                                } else {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Cannot start Facebook login.")
-                                    }
-                                }
-                            },
-                            onBiometricLoginClick = {
-                                if (context is FragmentActivity) {
-                                    viewModel.triggerBiometricAuth(context)
-                                } else {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Cannot initiate biometric auth.")
-                                    }
-                                }
-                            },
-                            isBiometricAuthPossible = biometricLoginEnabledUserPref &&
-                                    rememberMeEnabledFromVM &&
-                                    !rememberedEmailFromVM.isNullOrEmpty() &&
-                                    biometricAvailability == BiometricAvailability.AVAILABLE,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        AdaptiveSpacer(getResponsiveSpacing(12.dp))
-
-                        SignUpNavigationLink(
-                            onSignUpClick = { navController.navigate(Screen.SignUp.route) }
-                        )
-                    }
-                }
-            }
+    val state = LoginUiState(email, password, rememberEmail, submitted && validation.emailInvalid,
+        submitted && validation.passwordMissing, busy, method,
+        (login as? AuthViewModel.LoginState.Error)?.message ?: (biometric as? AuthViewModel.BiometricAuthState.Error)?.message ?: activityError ?: preferenceError,
+        showBiometrics = biometricPreference && rememberEmail && !storedEmail.isNullOrBlank() && availability == BiometricAvailability.AVAILABLE,
+        biometricReady = viewModel.hasBiometricSession())
+    val noActivity = { activityError = resources.getString(R.string.login_activity_unavailable) }
+    GlassTheme {
+        LoginScreenContent(state, snackbar,
+            onEmail = { email = it; emailEdited = true; activityError = null; viewModel.clearLoginError() },
+            onPassword = { password = it; activityError = null; viewModel.clearLoginError() },
+            onRemember = viewModel::userToggledRememberMe,
+            onSubmit = { if (!busy) { submitted = true; if (validation.valid) viewModel.loginWithEmail(email, password) } },
+            onForgot = { if (!busy) { viewModel.resetPasswordResetState(); showReset = true } },
+            onGoogle = { if (activity != null) viewModel.signInWithGoogleCredentialManager(activity) else noActivity() },
+            onFacebook = { (activity as? ComponentActivity)?.let(viewModel::signInWithFacebook) ?: noActivity() },
+            onBiometric = { (activity as? FragmentActivity)?.let(viewModel::triggerBiometricAuth) ?: noActivity() },
+            onSignUp = { if (!busy) navController.navigate(Screen.SignUp.route) { launchSingleTop = true } })
+        if (showReset) PasswordResetDialog(email.trim(), reset, onSend = viewModel::sendPasswordResetEmail,
+            onDismiss = { if (reset !is PasswordResetState.Loading) { showReset = false; viewModel.resetPasswordResetState() } },
+            onEdit = viewModel::resetPasswordResetState)
+        secondFactor?.let { challenge ->
+            MfaChallengeDialog(challenge, viewModel::verifySecondFactor, viewModel::selectSecondFactor,
+                viewModel::editSecondFactor, viewModel::cancelSecondFactor)
         }
     }
 }

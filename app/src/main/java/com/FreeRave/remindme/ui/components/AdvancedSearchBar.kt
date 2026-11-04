@@ -1,38 +1,34 @@
 package com.FreeRave.remindme.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.FreeRave.remindme.ui.theme.AppTypography
-import java.util.*
-
-enum class QuickFilter {
-    ALL, TODAY, THIS_WEEK, OVERDUE, COMPLETED
-}
+import com.FreeRave.remindme.R
+import com.FreeRave.remindme.model.QuickFilter
 
 @Composable
 fun AdvancedSearchBar(
@@ -40,160 +36,63 @@ fun AdvancedSearchBar(
     onQueryChange: (String) -> Unit,
     selectedFilter: QuickFilter,
     onFilterChange: (QuickFilter) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "Search reminders..."
+    modifier: Modifier = Modifier
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
-
-    Column(modifier = modifier) {
-        // Main Search Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Search Input
-            OutlinedTextField(
+    val focusManager = LocalFocusManager.current
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        GlassSurface(shape = RoundedCornerShape(20.dp)) {
+            TextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text(placeholder) },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
-                },
-                trailingIcon = {
-                    IconButton(onClick = { isExpanded = !isExpanded }) {
-                        val rotation by animateFloatAsState(
-                            targetValue = if (isExpanded) 180f else 0f,
-                            animationSpec = tween(300)
-                        )
-                        Icon(
-                            Icons.Default.ExpandMore,
-                            contentDescription = "Toggle filters",
-                            modifier = Modifier.rotate(rotation)
-                        )
-                    }
-                },
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(R.string.home_search)) },
+                leadingIcon = { Icon(Icons.Outlined.Search, null, modifier = Modifier.size(22.dp)) },
+                trailingIcon = if (query.isNotEmpty()) {
+                    { IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Default.Close, stringResource(R.string.home_clear_search), modifier = Modifier.size(20.dp))
+                    } }
+                } else null,
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = Color.Gray.copy(alpha = 0.3f)
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent
                 ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 singleLine = true
             )
         }
-
-        // Expandable Filters
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-            ) {
-                // Quick Filter Chips
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(QuickFilter.values()) { filter ->
-                        QuickFilterChip(
-                            filter = filter,
-                            isSelected = selectedFilter == filter,
-                            onClick = { onFilterChange(filter) }
-                        )
-                    }
-                }
-
-                // Search Tips
-                if (query.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Search tips: Try searching by title, description, or category",
-                        style = AppTypography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 4.dp)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Completion is not tracked by the data model; don't present overdue items as completed.
+            items(visibleQuickFilters, key = { it.name }) { filter ->
+                FilterChip(
+                    selected = selectedFilter == filter,
+                    onClick = { onFilterChange(filter) },
+                    label = { Text(stringResource(filter.labelResource)) },
+                    shape = RoundedCornerShape(50),
+                    border = null,
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = Color.Transparent,
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     )
-                }
+                )
             }
         }
     }
 }
 
-@Composable
-private fun QuickFilterChip(
-    filter: QuickFilter,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val (icon, label) = when (filter) {
-        QuickFilter.ALL -> Icons.Default.List to "All"
-        QuickFilter.TODAY -> Icons.Default.Today to "Today"
-        QuickFilter.THIS_WEEK -> Icons.Default.DateRange to "This Week"
-        QuickFilter.OVERDUE -> Icons.Default.Warning to "Overdue"
-        QuickFilter.COMPLETED -> Icons.Default.CheckCircle to "Completed"
+private val visibleQuickFilters = listOf(QuickFilter.ALL, QuickFilter.TODAY, QuickFilter.THIS_WEEK, QuickFilter.OVERDUE)
+
+private val QuickFilter.labelResource: Int
+    get() = when (this) {
+        QuickFilter.ALL -> R.string.home_all
+        QuickFilter.TODAY -> R.string.home_today
+        QuickFilter.THIS_WEEK -> R.string.home_week
+        QuickFilter.OVERDUE -> R.string.home_overdue
+        QuickFilter.COMPLETED -> R.string.home_completed
     }
-
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected)
-            MaterialTheme.colorScheme.primaryContainer
-        else
-            MaterialTheme.colorScheme.surface,
-        animationSpec = tween(200),
-        label = "background"
-    )
-
-    val contentColor by animateColorAsState(
-        targetValue = if (isSelected)
-            MaterialTheme.colorScheme.onPrimaryContainer
-        else
-            MaterialTheme.colorScheme.onSurface,
-        animationSpec = tween(200),
-        label = "content"
-    )
-
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected)
-            MaterialTheme.colorScheme.primary
-        else
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-        animationSpec = tween(200),
-        label = "border"
-    )
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(backgroundColor)
-            .border(
-                width = 1.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(20.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = contentColor,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = label,
-                style = AppTypography.labelMedium.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                ),
-                color = contentColor
-            )
-        }
-    }
-}

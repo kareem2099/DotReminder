@@ -1,9 +1,45 @@
 # Changelog
 
-All notable changes to **RemindMe** will be documented in this file.
+All notable changes to **DotReminder** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.0.7] - 2026-11-04
+
+### Added
+- An authenticated DotSuite AI gateway with Firebase token verification, account/network usage limits, bounded payloads and provider deadlines.
+- Firebase-backed authenticator enrollment, reauthentication and TOTP challenges in account security.
+- A biometric app lock tied to the signed-in account and foreground lifecycle.
+- Firebase SMS verification and recipient-bound resend/cooldown handling during registration.
+- In-app privacy links, a support email entry (`support@dotsuite.dev`) and an explicit account/associated-data deletion request explanation.
+- Device-local reminder alarm records and restoration after reboot, application update and clock/access changes.
+- Focused unit, isolated Compose UI, reminder-device and emulator-rule review coverage.
+
+### Changed
+- Rebuilt the app screens around shared glass surfaces, responsive forms and reusable UI components.
+- Updated Settings to show the actual build version **0.0.7 (8)**.
+- Retained **compileSdk 36 / targetSdk 36 (Android 16)** and **minSdk 29 (Android 10)**; version code increased from 7 to 8 for the new bundle.
+- Account deletion is an email-request workflow after ownership verification, with a 30-day processing commitment. The separate DotSuite website provides the policy and request page in five languages.
+- Bounded authentication network calls, cancellation-aware controllers and non-blocking session metadata writes.
+
+### Fixed
+- Notification permission handling and exact reminder timing, including recurrence, snooze and stable sound-channel behavior.
+- Recurring reminder dates/counts appearing overdue after the first occurrence.
+- AI chat keyboard spacing, conversation continuity and review-before-save reminder drafts.
+- Registration retries, late phone verification callbacks and cross-account handling.
+- App-lock policy reload/retry behavior and sensitive-dialog state across foreground transitions.
+- Missing owner-only Firestore session subcollection rules in the checked-in rule source.
+
+### Removed
+- The Gemini API key field from Android BuildConfig and the direct Gemini client SDK; provider credentials now stay in the server environment.
+
+### Release notes
+- The Settings deletion action opens a request pathway; it does not automatically erase a Firebase account when tapped.
+- Website publishing, production Firestore rule state, provider app-signing validation and Play review remain separate deployment checks.
+- See `docs/protected-ai-gateway.md` and `docs/auth-release-review.md` for gateway deployment and production checks.
+
+---
 
 ## [0.0.6] - 2026-07-31
 
@@ -28,17 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AGP (Android Gradle Plugin)** — 9.3.1
 - **Kotlin Version** — 2.3.10
 - **Build Target** — Target SDK 36 (Android 16), Min SDK 29 (Android 10), Java 17/21 compatibility
-
----
-
-## [0.0.7] - Unreleased
-
-### Planned
-- **Real Change Password** — Replace mock implementation with Firebase re-authentication and actual password update
-- **Complete Calendar Feature** — Full integration of HorizontalCalendar library with reminder display
-- **AI Parsing in AddReminderViewModel** — Integrate `parseReminderToJSON` with offline NLPUtils fallback
-- **Unit Tests** — Add unit tests for ViewModels and service layer
-- **Two-pane Layouts** — Enhanced tablet experience with side-by-side panels
 
 ---
 

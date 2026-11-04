@@ -2,111 +2,174 @@ package com.FreeRave.remindme.screens.category
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.FreeRave.remindme.model.Category
 import com.FreeRave.remindme.service.CategoryService
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
-import com.FreeRave.remindme.model.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.compose.ui.graphics.Color as ComposeColor
-import android.graphics.Color as AndroidColor
 
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
     private val categoryService: CategoryService,
     private val authService: FirebaseAuthServiceInterface
 ) : ViewModel() {
-
-    private val predefinedCategories = listOf(
-        Category(name = "Work", colorHex = "#FF42A5F5", icon = "💼", isPredefined = true),
-        Category(name = "Personal", colorHex = "#FF66BB6A", icon = "😊", isPredefined = true),
-        Category(name = "Health", colorHex = "#FFFF7043", icon = "🏥", isPredefined = true),
-        Category(name = "Shopping", colorHex = "#FFAB47BC", icon = "🛒", isPredefined = true)
-    )
-
-    private val _userCategories = MutableStateFlow<List<Category>>(emptyList())
-
-    private val _allCategories = MutableStateFlow<List<Category>>(predefinedCategories)
-    val allCategories: StateFlow<List<Category>> = _allCategories
+    private val _uiState = MutableStateFlow(CategoriesUiState())
+    internal val uiState = _uiState.asStateFlow()
+    val allCategories = _uiState.map { it.categories }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), builtInCategories)
+    private val _effects = Channel<CategoryEffect>(Channel.BUFFERED)
+    internal val effects = _effects.receiveAsFlow()
+    private var customCategories: List<Category> = emptyList()
+    private var activeUserId: String? = null
+    private var loadJob: Job? = null
 
     init {
         viewModelScope.launch {
-            val userId = authService.getCurrentUserId()
-            if (userId.isNotBlank()) {
-                try {
-                    categoryService.getCategories(userId).collect { categories ->
-                        val customMap = categories.groupBy { it.name.lowercase() }
-                        val result = mutableListOf<Category>()
+            authService.currentUserIdFlow().distinctUntilChanged().collectLatest { loadForUser(it) }
+        }
+    }
 
-                        // First add custom categories (which may override predefined names)
-                        result.addAll(categories.sortedByDescending { it.updatedAt })
+    fun retry() = loadForUser(authService.getCurrentUserId())
 
-                        // Then add predefined categories that aren't overridden by custom ones
-                        predefinedCategories.forEach { predefinedCat ->
-                            if (!customMap.containsKey(predefinedCat.name.lowercase())) {
-                                result.add(predefinedCat)
-                            }
-                        }
+    fun setQuery(value: String) { _uiState.update { it.copy(query = value) } }
 
-                        _allCategories.value = result.sortedByDescending { it.updatedAt }
+    internal fun setFilter(filter: CategoryFilter) { _uiState.update { it.copy(filter = filter) } }
+
+    fun resetFilters() { _uiState.update { it.copy(query = "", filter = CategoryFilter.ALL) } }
+
+    fun openEditor(category: Category? = null) {
+        _uiState.update { it.copy(editor = CategoryEditorState(original = category)) }
+    }
+
+    fun dismissEditor() {
+        _uiState.update { if (it.editor?.isSaving == true) it else it.copy(editor = null) }
+    }
+
+    internal fun updateDraft(draft: CategoryDraft) {
+        _uiState.update { state ->
+            val editor = state.editor
+            if (editor == null || editor.isSaving) state
+            else state.copy(editor = editor.copy(draft = draft, errors = emptySet(), saveFailed = false))
+        }
+    }
+
+    fun saveCategory() {
+        val state = _uiState.value
+        val editor = state.editor ?: return
+        if (editor.isSaving || !editor.hasChanges || state.isLoading) return
+        val errors = editor.draft.validate(state.categories, editor.original)
+        if (errors.isNotEmpty()) {
+            _uiState.update { it.copy(editor = editor.copy(errors = errors)) }
+            return
+        }
+        val userId = authService.getCurrentUserId()
+        if (userId.isBlank() || (editor.original?.isPredefined == false && editor.original.userId != userId)) {
+            _uiState.update { it.copy(editor = editor.copy(saveFailed = true)) }
+            return
+        }
+        val category = editor.draft.toCategory(editor.original, userId, System.currentTimeMillis())
+        val creating = editor.original == null || editor.original.isPredefined
+        _uiState.update { it.copy(editor = editor.copy(isSaving = true, saveFailed = false)) }
+        viewModelScope.launch {
+            try {
+                val saved = if (creating) categoryService.addCategory(category)
+                    else if (categoryService.updateCategory(category)) category else null
+                ensureActive()
+                if (activeUserId != userId) return@launch
+                if (saved == null) {
+                    _uiState.update { it.copy(editor = it.editor?.copy(isSaving = false, saveFailed = true)) }
+                } else {
+                    customCategories = customCategories.filterNot { it.id == saved.id } + saved
+                    _uiState.update {
+                        it.copy(categories = mergeCategories(customCategories), editor = null, query = "",
+                            filter = if (creating) CategoryFilter.CUSTOM else it.filter)
                     }
-                } catch (e: Exception) {
-                    // Permission errors or authentication issues, just show predefined categories
-                    _allCategories.value = predefinedCategories
+                    _effects.send(if (creating) CategoryEffect.CREATED else CategoryEffect.UPDATED)
                 }
-            } else {
-                // No authenticated user, show only predefined categories
-                _allCategories.value = predefinedCategories
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                if (activeUserId == userId) {
+                    _uiState.update { it.copy(editor = it.editor?.copy(isSaving = false, saveFailed = true)) }
+                }
             }
         }
     }
 
-    val categoryNames: List<String> get() = allCategories.value.map { it.name }
-    val categoryColors: Map<String, ComposeColor> get() = allCategories.value.associate { cat ->
-        cat.name to try {
-            ComposeColor(AndroidColor.parseColor(cat.colorHex))
-        } catch (e: Exception) {
-            ComposeColor.Gray
+    fun requestDelete(category: Category) {
+        if (!category.isPredefined && category.id.isNotBlank()) {
+            _uiState.update { it.copy(deleteTarget = category, deleteFailed = false) }
         }
     }
 
-    suspend fun addCategory(name: String, colorHex: String, description: String = "", icon: String = "📁"): Boolean {
+    fun dismissDelete() {
+        _uiState.update { if (it.isDeleting) it else it.copy(deleteTarget = null, deleteFailed = false) }
+    }
+
+    fun deleteCategory() {
+        val state = _uiState.value
+        val category = state.deleteTarget ?: return
         val userId = authService.getCurrentUserId()
-        if (userId.isNotBlank()) {
-            val category = Category(
-                userId = userId,
-                name = name,
-                colorHex = colorHex,
-                description = description,
-                icon = icon,
-                updatedAt = System.currentTimeMillis()
-            )
-            categoryService.addCategory(category)
-            return true
+        if (state.isDeleting || category.isPredefined || category.id.isBlank()) return
+        if (userId.isBlank() || category.userId != userId) {
+            _uiState.update { it.copy(deleteFailed = true) }
+            return
         }
-        return false
+        _uiState.update { it.copy(isDeleting = true, deleteFailed = false) }
+        viewModelScope.launch {
+            try {
+                val success = categoryService.deleteCategory(category.id)
+                ensureActive()
+                if (activeUserId != userId) return@launch
+                if (success) {
+                    customCategories = customCategories.filterNot { it.id == category.id }
+                    _uiState.update { it.copy(categories = mergeCategories(customCategories), deleteTarget = null, isDeleting = false) }
+                    _effects.send(CategoryEffect.DELETED)
+                } else _uiState.update { it.copy(isDeleting = false, deleteFailed = true) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                if (activeUserId == userId) _uiState.update { it.copy(isDeleting = false, deleteFailed = true) }
+            }
+        }
     }
 
-    suspend fun updateCategory(category: Category): Boolean {
-        return categoryService.updateCategory(category)
-    }
-
-    suspend fun deleteCategory(category: Category): Boolean {
-        return categoryService.deleteCategory(category.id)
-    }
-
-    suspend fun validateCategoryName(name: String, excludeCategoryId: String? = null): Boolean {
-        val userId = authService.getCurrentUserId()
-        if (userId.isBlank() || name.isBlank()) return false
-        
-        val allCategories = predefinedCategories + _userCategories.value
-        return allCategories.none { 
-            it.name.equals(name, ignoreCase = true) && (excludeCategoryId == null || it.id != excludeCategoryId)
+    private fun loadForUser(userId: String) {
+        loadJob?.cancel()
+        if (activeUserId != userId) {
+            customCategories = emptyList()
+            _uiState.value = CategoriesUiState()
+        } else _uiState.update { it.copy(isLoading = true, hasError = false) }
+        activeUserId = userId
+        if (userId.isBlank()) {
+            _uiState.update { it.copy(isLoading = false) }
+            return
+        }
+        loadJob = viewModelScope.launch {
+            try {
+                categoryService.getCategories(userId).collectLatest { categories ->
+                    customCategories = categories
+                    _uiState.update { it.copy(categories = mergeCategories(categories), isLoading = false, hasError = false) }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _uiState.update { it.copy(isLoading = false, hasError = true) }
+            }
         }
     }
 }

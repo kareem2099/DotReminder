@@ -207,10 +207,10 @@ class MainActivity : AppCompatActivity() {
                 ThemeSetting.DARK -> true
                 ThemeSetting.SYSTEM -> isSystemInDarkTheme()
                 ThemeSetting.OCEAN_BLUE -> isSystemInDarkTheme()
-                ThemeSetting.FOREST_GREEN -> false
-                ThemeSetting.SUNSET_ORANGE -> false
+                ThemeSetting.FOREST_GREEN -> isSystemInDarkTheme()
+                ThemeSetting.SUNSET_ORANGE -> isSystemInDarkTheme()
                 ThemeSetting.MIDNIGHT_PURPLE -> true
-                ThemeSetting.CANDY -> false
+                ThemeSetting.CANDY -> isSystemInDarkTheme()
             }
 
             RemindMeAppTheme(themeSetting = currentTheme, useDarkTheme = useDarkTheme) {
@@ -221,7 +221,7 @@ class MainActivity : AppCompatActivity() {
 //                        .padding(WindowInsets.systemBars.asPaddingValues())
                 ) {
                     AppNavGraph(
-                        startDestination = intentDestination ?: Screen.Login.route,
+                        startDestination = intentDestination ?: Screen.Splash.route,
                         modifier = Modifier
                     )
                 }

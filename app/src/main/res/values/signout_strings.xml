@@ -1,0 +1,17 @@
+<resources>
+    <string name="signout_title">Sign out</string>
+    <string name="signout_heading">Ready to sign out?</string>
+    <string name="signout_intro">You’ll be signed out of DotReminder on this device.</string>
+    <string name="signout_account">Current account</string>
+    <string name="signout_account_fallback">Your DotReminder account</string>
+    <string name="signout_saved_title">Your reminders stay saved</string>
+    <string name="signout_saved_intro">Signing out won’t delete your account or saved reminders. You can sign in again whenever you’re ready.</string>
+    <string name="signout_confirm">Sign out</string>
+    <string name="signout_cancel">Stay signed in</string>
+    <string name="signout_back">Back</string>
+    <string name="signout_loading">Signing out…</string>
+    <string name="signout_error">Couldn’t sign out. Please try again.</string>
+    <string name="signout_retry">Try again</string>
+    <string name="signout_complete">You’re signed out</string>
+    <string name="signout_redirect">Taking you to sign in…</string>
+</resources>

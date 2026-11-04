@@ -1,294 +1,150 @@
 package com.FreeRave.remindme.screens.settings
 
-import android.util.Log
+import com.FreeRave.remindme.ui.components.SecureWindowEffect
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
+import com.FreeRave.remindme.security.mfa.*
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import com.FreeRave.remindme.ui.components.PrivacyLinks
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.FreeRave.remindme.R
 import com.FreeRave.remindme.navigation.Screen
 import com.FreeRave.remindme.screens.auth.AuthViewModel
-import com.FreeRave.remindme.screens.settings.components.ChangePasswordDialog
-import com.FreeRave.remindme.screens.settings.components.ConfirmDisable2FADialog
-import com.FreeRave.remindme.screens.settings.components.DisplayBackupCodesDialog
-import com.FreeRave.remindme.screens.settings.components.SettingItemWithSwitch
-import com.FreeRave.remindme.screens.settings.components.TwoFactorAuthSetupDialog
-import com.FreeRave.remindme.ui.layout.*
-import com.FreeRave.remindme.ui.responsive.*
-import com.FreeRave.remindme.ui.theme.AppTypography
+import com.FreeRave.remindme.screens.settings.components.*
+import com.FreeRave.remindme.ui.theme.GlassTheme
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountSecurityScreen(
     navController: NavController,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    // Added LocalActivity instead of LocalContext
+    val resources = LocalResources.current
+    val context = LocalContext.current
+    val language = LocalConfiguration.current.locales[0].language
     val activity = LocalActivity.current as? FragmentActivity
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+    val notify: (String) -> Unit = { message -> scope.launch { snackbar.showSnackbar(message) }; Unit }
 
-    // 2FA State
-    val twoFactorAuthEnabledState by settingsViewModel.twoFactorAuthEnabled.collectAsState()
-    var showTwoFactorAuthSetupDialog by remember { mutableStateOf(false) }
-    var showConfirmDisable2FADialog by remember { mutableStateOf(false) }
-    var showBackupCodesDialog by remember { mutableStateOf(false) }
-    val current2FASecret by settingsViewModel.currentTwoFactorAuthSecret.collectAsState()
-    val current2FAOtpAuthUri by settingsViewModel.currentTwoFactorAuthOtpAuthUri.collectAsState()
-    val generatedBackupCodes by settingsViewModel.generatedBackupCodes.collectAsState()
-
-    // Change Password State
-    var showChangePasswordDialog by remember { mutableStateOf(false) }
-    val changePasswordState by authViewModel.changePasswordState.collectAsState()
-
-    // Biometric State
-    val biometricLoginEnabledState by authViewModel.biometricLoginEnabled.collectAsState()
-    val biometricAvailability by remember {
-        mutableStateOf(settingsViewModel.getBiometricAvailability())
-    }
-
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Account Security", style = AppTypography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        AdaptiveContainer { _, containerModifier ->
-            Column(
-                modifier = containerModifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = getResponsivePadding(16.dp)),
-                verticalArrangement = Arrangement.spacedBy(getResponsiveSpacing(16.dp))
-            ) {
-                Spacer(modifier = Modifier.height(getResponsiveSpacing(8.dp)))
-
-                // --- Two-Factor Authentication Section ---
-                Text(
-                    "Two-Factor Authentication (2FA)",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = getResponsiveSpacing(4.dp))
-                )
-                SettingItemWithSwitch(
-                    title = "Enable 2FA",
-                    isChecked = twoFactorAuthEnabledState,
-                    onCheckedChange = { enable ->
-                        if (enable) {
-                            settingsViewModel.startTwoFactorAuthSetup()
-                            showTwoFactorAuthSetupDialog = true
-                        } else {
-                            showConfirmDisable2FADialog = true
-                        }
-                    }
-                )
-                Text(
-                    "Protect your account with an extra layer of security. When enabled, you'll need to provide a code from your authenticator app during login.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(
-                        top = getResponsiveSpacing(2.dp),
-                        bottom = getResponsiveSpacing(8.dp)
-                    )
-                )
-
-                HorizontalDivider()
-
-                // --- Biometric Login Section ---
-                Text(
-                    "Biometric Login",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = getResponsiveSpacing(4.dp))
-                )
-                SettingItemWithSwitch(
-                    title = "Enable Biometric Login",
-                    isChecked = biometricLoginEnabledState,
-                    enabled = biometricAvailability == com.FreeRave.remindme.service.BiometricAvailability.AVAILABLE,
-                    onCheckedChange = { enable ->
-                        if (enable) {
-                            // Use Direct instead of unwrap loop
-                            if (activity != null) {
-                                authViewModel.attemptToEnableBiometricLogin(activity) { _, message ->
-                                    coroutineScope.launch {
-                                        message?.let { snackbarHostState.showSnackbar(it) }
-                                    }
-                                }
-                            } else {
-                                Log.w("AccountSecurityScreen", "FragmentActivity not found")
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Cannot perform biometric setup: Unable to find valid Activity.")
-                                }
-                            }
-                        } else {
-                            authViewModel.updateBiometricPreferenceDirectly(false)
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar("Biometric login disabled.")
-                            }
-                        }
-                    }
-                )
-                if (biometricAvailability != com.FreeRave.remindme.service.BiometricAvailability.AVAILABLE) {
-                    Text(
-                        text = when (biometricAvailability) {
-                            com.FreeRave.remindme.service.BiometricAvailability.NO_HARDWARE -> "No biometric hardware detected."
-                            com.FreeRave.remindme.service.BiometricAvailability.HARDWARE_UNAVAILABLE -> "Biometric hardware currently unavailable."
-                            com.FreeRave.remindme.service.BiometricAvailability.NONE_ENROLLED -> "No biometrics enrolled. Please set up in device settings."
-                            else -> "Biometric login is not supported on this device."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(
-                            start = getResponsiveSpacing(8.dp),
-                            top = getResponsiveSpacing(2.dp),
-                            bottom = getResponsiveSpacing(8.dp)
-                        )
-                    )
-                }
-
-                HorizontalDivider()
-
-                // --- Signed-in Devices Section ---
-                Text(
-                    "Signed-in Devices",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = getResponsiveSpacing(4.dp))
-                )
-                Text(
-                    "Review and manage devices where your account is currently active.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = getResponsiveSpacing(4.dp))
-                )
-                Button(
-                    onClick = { navController.navigate(Screen.ActiveSessions.route) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Review Devices")
-                }
-
-                HorizontalDivider()
-
-                // --- Change Password Section ---
-                Text(
-                    "Change Password",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = getResponsiveSpacing(4.dp))
-                )
-                Button(
-                    onClick = { showChangePasswordDialog = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Change Password")
-                }
-
-                Spacer(modifier = Modifier.height(getResponsiveSpacing(16.dp)))
+    val mfaViewModel: MfaSettingsViewModel = hiltViewModel()
+    val mfa by mfaViewModel.state.collectAsStateWithLifecycle()
+    val passwordMfa by authViewModel.secondFactorState.collectAsStateWithLifecycle()
+    val biometricEnabled by authViewModel.biometricLoginEnabled.collectAsStateWithLifecycle()
+    val biometricState by authViewModel.biometricAuthState.collectAsStateWithLifecycle()
+    val passwordState by authViewModel.changePasswordState.collectAsStateWithLifecycle()
+    val passwordBusy = passwordState is AuthViewModel.ChangePasswordState.Loading
+    val biometricBusy = biometricState is AuthViewModel.BiometricAuthState.Authenticating ||
+        biometricState is AuthViewModel.BiometricAuthState.FailedAttempt
+    var availability by remember { mutableStateOf(settingsViewModel.getBiometricAvailability()) }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, settingsViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                availability = settingsViewModel.getBiometricAvailability()
+                mfaViewModel.controller.refresh()
             }
         }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            authViewModel.cancelBiometricSetup()
+            if (!mfaViewModel.hiddenByAppLock) { mfaViewModel.controller.clearSensitiveState(); authViewModel.clearSecondFactor() }
+        }
     }
 
-    // Handle ChangePasswordState
-    LaunchedEffect(changePasswordState) {
-        when (val state = changePasswordState) {
+    // Credentials and pending enrollment are deliberately not saved across process death.
+    var showPassword by remember { mutableStateOf(false) }
+    var showDeletion by remember { mutableStateOf(false) }
+    SecureWindowEffect(showPassword || passwordMfa != null || mfa.step != MfaSettingsStep.NONE)
+    LaunchedEffect(mfa.notice) {
+        mfa.notice?.let { notice ->
+            notify(resources.getString(if (notice == MfaNotice.ADDED) R.string.mfa_added else R.string.mfa_removed))
+            mfaViewModel.controller.consumeNotice()
+        }
+    }
+
+    LaunchedEffect(passwordState) {
+        when (val result = passwordState) {
             is AuthViewModel.ChangePasswordState.Success -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(state.message)
-                }
-                showChangePasswordDialog = false
+                showPassword = false
                 authViewModel.resetChangePasswordState()
+                notify(result.message)
             }
-            is AuthViewModel.ChangePasswordState.Error -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(state.message)
-                }
-            }
-            else -> {}
+            is AuthViewModel.ChangePasswordState.Error -> if (!showPassword) notify(result.message)
+            else -> Unit
         }
     }
 
-    if (showTwoFactorAuthSetupDialog && current2FASecret != null && current2FAOtpAuthUri != null) {
-        TwoFactorAuthSetupDialog(
-            secretKey = current2FASecret!!,
-            otpAuthUri = current2FAOtpAuthUri!!,
-            onVerify = { code ->
-                settingsViewModel.verifyAndEnableTwoFactorAuth(code) { success, message, backupCodes ->
-                    coroutineScope.launch {
-                        message?.let { snackbarHostState.showSnackbar(it) }
-                    }
-                    if (success) {
-                        showTwoFactorAuthSetupDialog = false
-                        if (backupCodes.isNotEmpty()) {
-                            showBackupCodesDialog = true
+    GlassTheme {
+        AccountSecurityScreenContent(
+            AccountSecurityUiState(biometricEnabled, availability, biometricBusy, passwordBusy, mfa), snackbar,
+            onBack = { navController.popBackStack() },
+            onPassword = { if (!passwordBusy) { authViewModel.resetChangePasswordState(); showPassword = true } },
+            onBiometric = { enabled ->
+                if (!biometricBusy) {
+                    if (enabled) {
+                        if (activity != null) authViewModel.attemptToEnableBiometricLogin(activity) { _, message -> message?.let(notify) }
+                        else notify(resources.getString(R.string.security_biometric_no_activity))
+                    } else {
+                        authViewModel.updateBiometricPreferenceDirectly(false) { success ->
+                            notify(resources.getString(if (success) R.string.security_biometric_disabled else R.string.app_lock_failed))
                         }
                     }
                 }
             },
-            onDismiss = {
-                settingsViewModel.cancelTwoFactorAuthSetup()
-                showTwoFactorAuthSetupDialog = false
-            },
-            onSecretCopied = { message ->
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(message)
-                }
+            onDevices = { navController.navigate(Screen.ActiveSessions.route) },
+            onVerifyEmail = { navController.navigate(Screen.VerifyEmail.route) { launchSingleTop = true } },
+            onMfaAdd = { mfaViewModel.controller.request(MfaAction.Add) },
+            onMfaRemove = { mfaViewModel.controller.request(MfaAction.Remove(it)) },
+            onMfaRefresh = mfaViewModel.controller::refresh,
+            onMfaSignIn = { navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true }; launchSingleTop = true } },
+            onPrivacy = { PrivacyLinks.open(context, language) },
+            onContactSupport = { PrivacyLinks.contactSupport(context, language) },
+            onDeleteAccount = { showDeletion = true }
+        )
+        if (showDeletion) DeleteAccountRequestDialog(
+            onContinue = { showDeletion = false; PrivacyLinks.open(context, language, deletion = true) },
+            onDismiss = { showDeletion = false }
+        )
+        if (showPassword && passwordMfa == null) ChangePasswordDialog(
+            onConfirm = authViewModel::changePassword,
+            onDismiss = { if (!passwordBusy) { showPassword = false; authViewModel.resetChangePasswordState() } },
+            busy = passwordBusy, error = (passwordState as? AuthViewModel.ChangePasswordState.Error)?.message,
+            onInputChanged = { if (passwordState is AuthViewModel.ChangePasswordState.Error) authViewModel.resetChangePasswordState() })
+        passwordMfa?.let { challenge ->
+            MfaChallengeDialog(challenge, authViewModel::verifySecondFactor, authViewModel::selectSecondFactor,
+                authViewModel::editSecondFactor, authViewModel::cancelSecondFactor)
+        }
+        when (mfa.step) {
+            MfaSettingsStep.REAUTHENTICATE -> MfaReauthenticationDialog(mfa,
+                onConfirm = { provider, password ->
+                    (activity as? ComponentActivity)?.let { mfaViewModel.reauthenticate(it, provider, password) }
+                        ?: notify(resources.getString(R.string.security_biometric_no_activity))
+                }, onEdit = mfaViewModel.controller::edit, onDismiss = mfaViewModel.controller::cancel)
+            MfaSettingsStep.CHALLENGE -> mfa.challenge?.let { challenge ->
+                MfaChallengeDialog(challenge.copy(busy = mfa.busy), mfaViewModel.controller::verifyChallenge,
+                    mfaViewModel.controller::selectFactor, mfaViewModel.controller::edit, mfaViewModel.controller::cancel)
             }
-        )
-    }
-
-    if (showConfirmDisable2FADialog) {
-        ConfirmDisable2FADialog(
-            onConfirm = { code ->
-                settingsViewModel.disableTwoFactorAuth(code) { success, message ->
-                    coroutineScope.launch {
-                        message?.let { snackbarHostState.showSnackbar(it) }
-                    }
-                    if (success) {
-                        showConfirmDisable2FADialog = false
-                    }
-                }
-            },
-            onDismiss = { showConfirmDisable2FADialog = false }
-        )
-    }
-
-    if (showBackupCodesDialog) {
-        DisplayBackupCodesDialog(
-            backupCodes = generatedBackupCodes,
-            onDismiss = {
-                showBackupCodesDialog = false
-                settingsViewModel.cancelTwoFactorAuthSetup()
-            },
-            onCopied = { message ->
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(message)
-                }
+            MfaSettingsStep.ENROLL -> mfa.setup?.let { setup ->
+                TwoFactorAuthSetupDialog(setup.secret, setup.qrUri,
+                    onVerify = mfaViewModel.controller::enroll, onDismiss = mfaViewModel.controller::cancel,
+                    onSecretCopied = notify, busy = mfa.busy,
+                    error = mfa.error?.let { resources.getString(mfaErrorResource(it)) }, onInputChanged = mfaViewModel.controller::edit,
+                    shouldClearClipboard = { !mfaViewModel.hiddenByAppLock })
             }
-        )
-    }
-
-    if (showChangePasswordDialog) {
-        ChangePasswordDialog(
-            onConfirm = { currentPassword, newPassword ->
-                authViewModel.changePassword(currentPassword, newPassword)
-            },
-            onDismiss = {
-                showChangePasswordDialog = false
-                authViewModel.resetChangePasswordState()
-            }
-        )
+            MfaSettingsStep.NONE -> Unit
+        }
     }
 }

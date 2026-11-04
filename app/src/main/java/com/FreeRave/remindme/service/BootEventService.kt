@@ -1,79 +1,54 @@
 package com.FreeRave.remindme.service
 
-import android.app.Service
-import android.content.Intent
-import android.os.IBinder
+import android.app.job.JobInfo
+import android.app.job.JobParameters
+import android.app.job.JobScheduler
+import android.app.job.JobService
+import android.content.ComponentName
+import android.content.Context
 import android.util.Log
-import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
-import com.FreeRave.remindme.service.ReminderService
-import com.FreeRave.remindme.service.GeofenceService
+import com.FreeRave.remindme.utils.NotificationUtils
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import javax.inject.Inject
 
-private const val TAG = "BootEventService"
-
+/** Boot broadcasts cannot start ordinary background services on current Android releases. */
 @AndroidEntryPoint
-class BootEventService : Service() {
+class BootEventService : JobService() {
+    @Inject lateinit var reminderService: ReminderService
+    @Inject lateinit var geofenceService: GeofenceService
+    @Inject lateinit var authService: FirebaseAuthServiceInterface
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var work: Job? = null
 
-    @Inject
-    lateinit var reminderService: ReminderService
-
-    @Inject
-    lateinit var geofenceService: GeofenceService
-
-    @Inject
-    lateinit var authService: FirebaseAuthServiceInterface
-
-    private val serviceScope = CoroutineScope(Dispatchers.IO)
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "Service started")
-
-        serviceScope.launch {
+    override fun onStartJob(params: JobParameters): Boolean {
+        work = scope.launch {
             try {
-                performBootTasks()
-            } catch (e: Exception) {
-                Log.e(TAG, "Error performing boot tasks", e)
-            } finally {
-                stopSelf(startId)
-            }
+                val uid = authService.getCurrentUserId()
+                if (uid.isNotBlank()) {
+                    val reminders = reminderService.getRemindersOnce(uid)
+                    if (authService.getCurrentUserId() == uid) {
+                        // An unavailable server can return no data; device-local alarms remain intact.
+                        if (reminders.isNotEmpty()) NotificationUtils.reconcileNotifications(applicationContext, reminders, uid)
+                        geofenceService.registerGeofences(reminders.filter {
+                            it.isLocationBased && it.latitude != null && it.longitude != null
+                        })
+                    }
+                }
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) { Log.e("BootEventService", "Could not restore reminder registrations", error) }
+            finally { if (currentCoroutineContext().isActive) jobFinished(params, false) }
         }
-
-        return START_NOT_STICKY
+        return true
     }
+    override fun onStopJob(params: JobParameters): Boolean { work?.cancel(); return true }
+    override fun onDestroy() { scope.cancel(); super.onDestroy() }
 
-    private suspend fun performBootTasks() {
-        try {
-            val userId = authService.getCurrentUserId()
-            if (userId.isNotBlank()) {
-                val reminders = reminderService.getRemindersOnce(userId)
-                val locationReminders = reminders.filter { reminder ->
-                    reminder.isLocationBased &&
-                            reminder.latitude != null &&
-                            reminder.longitude != null
-                }
-                if (locationReminders.isNotEmpty()) {
-                    Log.d(TAG, "Re-registering ${locationReminders.size} location-based geofences after boot")
-                    geofenceService.registerGeofences(locationReminders)
-                } else {
-                    Log.d(TAG, "No location-based reminders found to re-register")
-                }
-            } else {
-                Log.w(TAG, "User not authenticated, cannot re-register geofences")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error re-registering geofences on boot", e)
+    companion object {
+        fun enqueue(context: Context) {
+            val info = JobInfo.Builder(312005, ComponentName(context, BootEventService::class.java))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).build()
+            context.getSystemService(JobScheduler::class.java).schedule(info)
         }
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        serviceScope.cancel()
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
 }

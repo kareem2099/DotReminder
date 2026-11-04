@@ -112,6 +112,7 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.RemindMeApp"
             android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize"
             android:configChanges="keyboardHidden|orientation|screenSize|uiMode|screenLayout|smallestScreenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -143,6 +144,15 @@
             android:name=".utils.NotificationReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <receiver android:name=".reminders.ReminderAlarmRestoreReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".utils.GeofenceBroadcastReceiver"
@@ -178,7 +188,8 @@
         <service
             android:name=".service.BootEventService"
             android:enabled="true"
-            android:exported="false" />
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
 
         <!-- Quick Add Reminder Widget -->
         <receiver

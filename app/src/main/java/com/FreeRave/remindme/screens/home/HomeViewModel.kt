@@ -8,15 +8,19 @@ import com.FreeRave.remindme.model.Reminder
 import com.FreeRave.remindme.service.ReminderService
 import com.FreeRave.remindme.service.GeofenceService
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
-import com.FreeRave.remindme.ui.components.QuickFilter
+import com.FreeRave.remindme.model.QuickFilter
 import com.FreeRave.remindme.utils.NotificationUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import java.util.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,6 +32,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _unfilteredReminders = MutableStateFlow<List<Reminder>>(emptyList())
+    val allReminders: StateFlow<List<Reminder>> = _unfilteredReminders.asStateFlow()
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
     val reminders: StateFlow<List<Reminder>> = _reminders
 
@@ -41,45 +46,78 @@ class HomeViewModel @Inject constructor(
     val selectedQuickFilter: StateFlow<QuickFilter> = _selectedQuickFilter
 
     // This was the version with _isRefreshing for swipe-to-refresh
-    private val _isRefreshing = MutableStateFlow(false)
+    private val _isRefreshing = MutableStateFlow(true)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    private val _hasError = MutableStateFlow(false)
+    val hasError = _hasError.asStateFlow()
+    private var remindersJob: Job? = null
 
     private val _showGpsEnableDialog = MutableStateFlow(false)
     val showGpsEnableDialog: StateFlow<Boolean> = _showGpsEnableDialog
 
+    private val _userName = MutableStateFlow<String?>(null)
+    val userName: StateFlow<String?> = _userName.asStateFlow()
+
     private var geofencesRegistered = false
 
     init {
-        loadReminders()
+        viewModelScope.launch {
+            authService.currentUserIdFlow().distinctUntilChanged().collectLatest { userId ->
+                remindersJob?.cancel()
+                _unfilteredReminders.value = emptyList()
+                _reminders.value = emptyList()
+                _hasError.value = false
+                geofencesRegistered = false
+                if (userId.isNotBlank()) {
+                    _isRefreshing.value = true
+                    try {
+                        authService.refreshCurrentUser()
+                    } catch (e: CancellationException) { throw e }
+                    catch (e: Exception) {
+                        // Ignore reload error if offline
+                    }
+                    _userName.value = authService.getUserDisplayName()
+                    loadRemindersForUser(userId)
+                } else {
+                    _userName.value = null
+                    _unfilteredReminders.value = emptyList()
+                    _reminders.value = emptyList()
+                    _isRefreshing.value = false
+                }
+            }
+        }
     }
 
-    private fun loadReminders() {
-        viewModelScope.launch {
-            _isRefreshing.value = true // Set refreshing true
-            val userId = authService.getCurrentUserId()
-            if (userId.isNotBlank()) {
-                Log.d("HomeViewModel", "Starting to collect reminders for userId: $userId")
-                try {
-                    reminderService.getReminders(userId).collectLatest { newReminders ->
-                        Log.d("HomeViewModel", "Firestore emitted new reminders. Count: ${newReminders.size}. First item ID if any: ${newReminders.firstOrNull()?.id}")
-                        _unfilteredReminders.value = newReminders
-                        _reminders.value = applyFilters(newReminders)
-                        _isRefreshing.value = false // Set refreshing false
-
-                        // Register geofences for location-based reminders on initial app load
-                        if (!geofencesRegistered) {
-                            registerGeofences(newReminders)
-                            geofencesRegistered = true
+    private fun loadRemindersForUser(userId: String) {
+        remindersJob?.cancel()
+        remindersJob = viewModelScope.launch {
+            _isRefreshing.value = true
+            _hasError.value = false
+            Log.d("HomeViewModel", "Starting to collect reminders for userId: $userId")
+            try {
+                reminderService.getReminders(userId).collectLatest { newReminders ->
+                    if (authService.getCurrentUserId() != userId) return@collectLatest
+                    Log.d("HomeViewModel", "Firestore emitted new reminders. Count: ${newReminders.size}.")
+                    _unfilteredReminders.value = newReminders
+                    _reminders.value = applyFilters(newReminders)
+                    _isRefreshing.value = false
+                    try {
+                        withContext(Dispatchers.IO) {
+                            NotificationUtils.reconcileNotifications(application.applicationContext, newReminders, userId)
                         }
+                    } catch (error: CancellationException) { throw error }
+                    catch (_: Exception) { /* The list remains usable when local notification storage is unavailable. */ }
+
+                    if (!geofencesRegistered) {
+                        registerGeofences(newReminders)
+                        geofencesRegistered = true
                     }
-                } catch (e: Exception) {
-                    Log.e("HomeViewModel", "Error collecting reminders", e)
-                    _isRefreshing.value = false // Set refreshing false on error
                 }
-            } else {
-                _reminders.value = emptyList()
-                _isRefreshing.value = false // Set refreshing false if no user
-                Log.w("HomeViewModel", "User ID is blank in loadReminders. Reminders list cleared.")
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                Log.e("HomeViewModel", "Error collecting reminders for user: $userId", e)
+                _isRefreshing.value = false
+                _hasError.value = true
             }
         }
     }
@@ -87,121 +125,32 @@ class HomeViewModel @Inject constructor(
     // Added for swipe to refresh
     fun refreshReminders() {
         Log.d("HomeViewModel", "refreshReminders called")
-        loadReminders()
+        val userId = authService.getCurrentUserId()
+        if (userId.isNotBlank()) {
+            loadRemindersForUser(userId)
+        }
     }
 
     fun searchReminders(query: String) {
         _searchQuery.value = query
-        viewModelScope.launch {
-            val userId = authService.getCurrentUserId() 
-            if (userId.isNotBlank()) {
-                if (query.isBlank()) {
-                    Log.d("HomeViewModel", "Search query is blank, calling refreshReminders to reload all.")
-                    refreshReminders() // Call refresh which handles _isRefreshing state
-                } else {
-                    _isRefreshing.value = true // Set refreshing true for search
-                    Log.d("HomeViewModel", "Searching reminders for userId: $userId, query: $query")
-                    try {
-                        reminderService.searchReminders(userId, query).collectLatest { searchedReminders ->
-                            Log.d("HomeViewModel", "Search returned. Count: ${searchedReminders.size}")
-                            _reminders.value = applyFilters(searchedReminders)
-                            _isRefreshing.value = false // Set refreshing false
-                        }
-                    } catch (e: Exception) {
-                        Log.e("HomeViewModel", "Error searching reminders", e)
-                        _isRefreshing.value = false // Set refreshing false on error
-                    }
-                }
-            } else {
-                _reminders.value = emptyList()
-                _isRefreshing.value = false // Set refreshing false if no user
-                Log.w("HomeViewModel", "User ID is blank in searchReminders. Reminders list cleared.")
-            }
-        }
+        _reminders.value = applyFilters(_unfilteredReminders.value)
     }
 
-    private fun applyFilters(allReminders: List<Reminder>): List<Reminder> {
-        var filtered = allReminders
-
-        // Apply quick filter first
-        val quickFilter = _selectedQuickFilter.value
-        val currentTime = System.currentTimeMillis()
-        val calendar = Calendar.getInstance()
-
-        filtered = when (quickFilter) {
-            QuickFilter.ALL -> filtered
-            QuickFilter.TODAY -> {
-                val today = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }
-                val tomorrow = Calendar.getInstance().apply {
-                    time = today.time
-                    add(Calendar.DAY_OF_MONTH, 1)
-                }
-                filtered.filter { reminder ->
-                    reminder.reminderTime >= today.timeInMillis && reminder.reminderTime < tomorrow.timeInMillis
-                }
-            }
-            QuickFilter.THIS_WEEK -> {
-                val weekStart = Calendar.getInstance().apply {
-                    set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }
-                val weekEnd = Calendar.getInstance().apply {
-                    time = weekStart.time
-                    add(Calendar.WEEK_OF_YEAR, 1)
-                }
-                filtered.filter { reminder ->
-                    reminder.reminderTime >= weekStart.timeInMillis && reminder.reminderTime < weekEnd.timeInMillis
-                }
-            }
-            QuickFilter.OVERDUE -> {
-                filtered.filter { reminder -> reminder.reminderTime < currentTime }
-            }
-            QuickFilter.COMPLETED -> {
-                // For completed, we consider reminders that have passed their time (since we don't have a completion field)
-                filtered.filter { reminder -> reminder.reminderTime < currentTime }
-            }
-        }
-
-        // Apply search query
-        val query = _searchQuery.value
-        if (query.isNotBlank()) {
-            filtered = filtered.filter {
-                it.title.contains(query, ignoreCase = true) ||
-                it.description.contains(query, ignoreCase = true) ||
-                it.category.contains(query, ignoreCase = true)
-            }
-        }
-
-        // Apply category filter
-        val category = _selectedCategory.value
-        if (category != null) {
-            filtered = filtered.filter { it.category == category }
-        }
-
-        return filtered
-    }
+    private fun applyFilters(reminders: List<Reminder>): List<Reminder> = filterHomeReminders(
+        reminders = reminders,
+        query = _searchQuery.value,
+        category = _selectedCategory.value,
+        quickFilter = _selectedQuickFilter.value
+    )
 
     fun selectCategory(category: String?) {
         _selectedCategory.value = category
-        // If no search query, reapply filters to unfiltered reminders
-        // If there is search, the reminders are already filtered by search service, so apply category to them
-        val baseReminders = if (_searchQuery.value.isBlank()) _unfilteredReminders.value else _reminders.value.map { it } // copy to avoid mutation
-        _reminders.value = applyFilters(baseReminders)
+        _reminders.value = applyFilters(_unfilteredReminders.value)
     }
 
     fun selectQuickFilter(filter: QuickFilter) {
         _selectedQuickFilter.value = filter
-        // Reapply all filters with the new quick filter
-        val baseReminders = if (_searchQuery.value.isBlank()) _unfilteredReminders.value else _reminders.value.map { it } // copy to avoid mutation
-        _reminders.value = applyFilters(baseReminders)
+        _reminders.value = applyFilters(_unfilteredReminders.value)
     }
 
     fun deleteReminder(reminderId: String) {

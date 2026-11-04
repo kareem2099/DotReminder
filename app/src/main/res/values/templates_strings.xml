@@ -1,0 +1,67 @@
+<resources>
+    <string name="templates_title">Templates</string>
+    <string name="templates_intro">Your everyday reminders, ready to reuse.</string>
+    <string name="templates_search">Find a template…</string>
+    <string name="templates_clear_search">Clear search</string>
+    <string name="templates_all">All</string>
+    <string name="templates_recurring">Repeating</string>
+    <string name="templates_location">Location</string>
+    <string name="templates_new">New template</string>
+    <string name="templates_edit">Edit template</string>
+    <string name="templates_options">Options for %1$s</string>
+    <string name="templates_delete">Delete template</string>
+    <string name="templates_delete_body">Delete “%1$s”? Your reminders will stay unchanged.</string>
+    <string name="templates_delete_failed">Couldn’t delete this template. Please try again.</string>
+    <string name="templates_delete_confirm">Delete</string>
+    <string name="templates_use">Use template</string>
+    <string name="templates_cancel">Cancel</string>
+    <string name="templates_save">Save template</string>
+    <string name="templates_saving">Saving…</string>
+    <string name="templates_deleting">Deleting…</string>
+    <string name="templates_created">Template created.</string>
+    <string name="templates_updated">Template updated.</string>
+    <string name="templates_deleted">Template deleted.</string>
+    <string name="templates_editor_hint">Save the details you reuse. Choose a date and time when you use the template.</string>
+    <string name="templates_details">Template details</string>
+    <string name="templates_name">Template name</string>
+    <string name="templates_name_hint">For example, Morning routine</string>
+    <string name="templates_default_title">Default reminder title</string>
+    <string name="templates_description">Default description</string>
+    <string name="templates_repeat">Repeat reminder</string>
+    <string name="templates_repeat_hint">Keep a repeat interval ready to use</string>
+    <string name="templates_repeat_every">Repeat every</string>
+    <string name="templates_interval_unit">Time unit</string>
+    <string name="templates_seconds">Seconds</string>
+    <string name="templates_minutes">Minutes</string>
+    <string name="templates_hours">Hours</string>
+    <string name="templates_days">Days</string>
+    <string name="templates_weeks">Weeks</string>
+    <string name="templates_interval_summary">Every %1$s %2$s</string>
+    <string name="templates_interval_missing">Repeat interval needs attention</string>
+    <string name="templates_location_toggle">Location reminder</string>
+    <string name="templates_location_hint">Choose a location when you use this template</string>
+    <string name="templates_error_name">Enter a template name.</string>
+    <string name="templates_error_title">Enter a default reminder title.</string>
+    <string name="templates_error_interval">Enter a valid positive interval.</string>
+    <string name="templates_error_save">Couldn’t save this template. Your changes are still here.</string>
+    <string name="templates_loading">Loading your templates…</string>
+    <string name="templates_load_error">Couldn’t load your templates</string>
+    <string name="templates_load_error_body">Check your connection and try again.</string>
+    <string name="templates_retry">Try again</string>
+    <string name="templates_empty">A little less typing next time</string>
+    <string name="templates_empty_body">Create a template for reminders you add often.</string>
+    <string name="templates_no_results">No matching templates</string>
+    <string name="templates_no_results_body">Try another search or change the filter.</string>
+    <string name="templates_reset">Show all templates</string>
+    <string name="templates_sign_in">Sign in to see your templates</string>
+    <string name="templates_sign_in_body">Your templates are saved with your account.</string>
+    <plurals name="templates_count">
+        <item quantity="one">%d template</item>
+        <item quantity="other">%d templates</item>
+    </plurals>
+    <plurals name="templates_unit_seconds"><item quantity="one">second</item><item quantity="other">seconds</item></plurals>
+    <plurals name="templates_unit_minutes"><item quantity="one">minute</item><item quantity="other">minutes</item></plurals>
+    <plurals name="templates_unit_hours"><item quantity="one">hour</item><item quantity="other">hours</item></plurals>
+    <plurals name="templates_unit_days"><item quantity="one">day</item><item quantity="other">days</item></plurals>
+    <plurals name="templates_unit_weeks"><item quantity="one">week</item><item quantity="other">weeks</item></plurals>
+</resources>

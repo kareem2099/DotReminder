@@ -18,7 +18,6 @@ class BootReceiver : BroadcastReceiver() {
         Log.d(TAG, "Device boot completed, starting service to re-register geofences")
 
         // Start service to handle boot tasks
-        val serviceIntent = Intent(context, BootEventService::class.java)
-        context.startService(serviceIntent)
+        BootEventService.enqueue(context)
     }
 }

@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import javax.inject.Inject
 // AppCoins related imports are removed.
 // import java.util.Locale // Keep if used elsewhere, remove if only for AppCoins
@@ -23,6 +25,8 @@ class RemindMeApp : Application() {
 
     @Inject
     lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var appLockSession: com.FreeRave.remindme.security.lock.AppLockSession
+    @Inject lateinit var authService: com.FreeRave.remindme.service.FirebaseAuthServiceInterface
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var adManager: AdManager
 
@@ -44,6 +48,12 @@ class RemindMeApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        applicationScope.launch(Dispatchers.IO) {
+            authService.currentUserIdFlow().distinctUntilChanged().collectLatest {
+                try { NotificationUtils.restoreNotifications(applicationContext) }
+                catch (_: Exception) { Log.w(TAG, "Could not restore reminder alarms") }
+            }
+        }
 
         // Initialize Google Mobile Ads
         MobileAds.initialize(this) { status ->
@@ -51,7 +61,10 @@ class RemindMeApp : Application() {
         }
 
         // Initialize Ad Manager for app-open ads
-        adManager = AdManager(this)
+        adManager = AdManager(this) {
+            val lock = appLockSession.controller.state.value
+            lock.canReveal && lock.accountId != null
+        }
 
         // Load user preferences (example: try to load selected theme to trigger datastore init)
         applicationScope.launch {

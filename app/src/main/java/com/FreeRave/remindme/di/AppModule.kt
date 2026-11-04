@@ -12,8 +12,6 @@ import com.FreeRave.remindme.service.GoogleSignInOnlyService
 import com.FreeRave.remindme.service.GoogleSignInOnlyServiceImpl
 import com.FreeRave.remindme.service.ReminderService
 import com.FreeRave.remindme.service.FirebaseService
-import com.FreeRave.remindme.service.FirebaseVerificationServiceImpl
-import com.FreeRave.remindme.service.VerificationService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
@@ -48,8 +46,8 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun provideGoogleAuthService(firebaseAuth: FirebaseAuth): GoogleAuthServiceInterface { // New provider for GoogleAuthService
-        return GoogleAuthServiceImpl(firebaseAuth)
+    fun provideGoogleAuthService(firebaseAuth: FirebaseAuth, credentials: com.FreeRave.remindme.service.GoogleCredentialSource): GoogleAuthServiceInterface {
+        return GoogleAuthServiceImpl(firebaseAuth, credentials)
     }
 
     @Provides
@@ -72,14 +70,8 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun provideVerificationService(firebaseAuth: FirebaseAuth): VerificationService {
-        return FirebaseVerificationServiceImpl(firebaseAuth)
-    }
-
-    @Provides
-    @Singleton
-    fun provideFacebookSignInOnlyService(): FacebookSignInOnlyService {
-        return FacebookSignInOnlyServiceImpl()
+    fun provideFacebookSignInOnlyService(firebaseAuth: FirebaseAuth): FacebookSignInOnlyService {
+        return FacebookSignInOnlyServiceImpl(firebaseAuth)
     }
 
     @Provides

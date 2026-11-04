@@ -1,108 +1,108 @@
 package com.FreeRave.remindme.screens.edit
 
-import android.util.Log
 import android.app.Application
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.FreeRave.remindme.data.UserPreferencesRepository
-import com.FreeRave.remindme.model.Reminder
-import com.FreeRave.remindme.utils.NotificationUtils
 import com.FreeRave.remindme.service.ReminderService
+import com.FreeRave.remindme.ui.reminder.ReminderDraft
+import com.FreeRave.remindme.ui.reminder.ReminderFormEvent
+import com.FreeRave.remindme.ui.reminder.applyTo
+import com.FreeRave.remindme.ui.reminder.toDraft
+import com.FreeRave.remindme.ui.reminder.update
+import com.FreeRave.remindme.ui.reminder.validate
+import com.FreeRave.remindme.utils.NotificationUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class EditReminderViewModel @Inject constructor(
-    private val application: Application, // Inject Application context
+    private val application: Application,
     private val reminderService: ReminderService,
-    private val userPreferencesRepository: UserPreferencesRepository // Inject preferences
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
-    private val _reminder = mutableStateOf<Reminder?>(null)
-    private var originalReminderTime: Long? = null
-    val reminder: State<Reminder?> get() = _reminder
-
-    fun updateReminderTime(newTime: Long) = viewModelScope.launch {
-        _reminder.value = _reminder.value?.copy(reminderTime = newTime)
-    }
+    private val _uiState = MutableStateFlow(EditReminderUiState())
+    internal val uiState = _uiState.asStateFlow()
+    private val _effects = Channel<EditReminderEffect>(Channel.BUFFERED)
+    internal val effects = _effects.receiveAsFlow()
+    private var loadJob: Job? = null
 
     fun loadReminder(id: String) {
-        Log.d("EditReminderVM", "Loading reminder with id: $id")
+        if (_uiState.value.original?.id == id) return
+        loadJob?.cancel()
+        _uiState.value = EditReminderUiState()
         if (id.isBlank()) {
-            Log.e("EditReminderVM", "Empty reminder ID provided!")
+            _uiState.value = EditReminderUiState(isLoading = false)
             return
         }
-        
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             try {
-                Log.d("EditReminderVM", "Calling reminderService.getReminder")
-                val loadedReminder = reminderService.getReminder(id)
-                Log.d("EditReminderVM", "Service returned: ${loadedReminder?.toString()}")
-                
-                if (loadedReminder == null) {
-                    Log.e("EditReminderVM", "No reminder found with ID: $id")
-                }
-                
-                _reminder.value = loadedReminder
-                originalReminderTime = loadedReminder?.reminderTime // Store original time
-                Log.d("EditReminderVM", "ViewModel reminder updated to: ${_reminder.value?.toString()}")
-            } catch (e: Exception) {
-                Log.e("EditReminderVM", "Error loading reminder", e)
+                val reminder = reminderService.getReminder(id)
+                ensureActive()
+                _uiState.value = EditReminderUiState(
+                    original = reminder, draft = reminder?.toDraft() ?: ReminderDraft(),
+                    isLoading = false
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _uiState.value = EditReminderUiState(isLoading = false)
             }
         }
     }
 
-    fun updateReminder(
-        title: String,
-        description: String,
-        reminderTime: Long,
-        category: String,
-        onComplete: (Boolean) -> Unit
-    ) {
-        Log.d("EditReminderVM", "Starting updateReminder")
+    internal fun updateDraft(event: ReminderFormEvent) {
+        _uiState.update { state ->
+            if (state.isLoading || state.isSaving || state.original == null) state
+            else state.copy(draft = state.draft.update(event))
+        }
+    }
+
+    fun saveReminder() {
+        val state = _uiState.value
+        val original = state.original ?: return
+        if (state.isSaving || state.isLoading || !state.hasChanges) return
+        val now = System.currentTimeMillis()
+        _uiState.update { it.copy(validationRequest = it.validationRequest + 1) }
+        if (state.draft.validate(now, original.reminderTime).isNotEmpty()) {
+            _effects.trySend(EditReminderEffect.VALIDATION_FAILED)
+            return
+        }
+        val updated = state.draft.applyTo(original, now)
+        _uiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             try {
-                val current = _reminder.value ?: run {
-                    Log.e("EditReminderVM", "No current reminder to update")
-                    onComplete(false)
+                val success = reminderService.updateReminder(updated)
+                ensureActive()
+                if (!success) {
+                    _effects.send(EditReminderEffect.SAVE_FAILED)
                     return@launch
                 }
-                Log.d("EditReminderVM", "Updating reminder ${current.id} with new data")
-                val updated = current.copy(
-                    title = title,
-                    description = description,
-                    reminderTime = reminderTime,
-                    category = category,
-                    time = System.currentTimeMillis()
-                )
-                Log.d("EditReminderVM", "Calling reminderService.updateReminder")
-                val success = reminderService.updateReminder(updated)
-                Log.d("EditReminderVM", "Service call result: $success")
-                if (success) {
-                    _reminder.value = updated
-                    // Cancel old notification if time changed
-                    if (originalReminderTime != null && originalReminderTime != updated.reminderTime) {
-                        NotificationUtils.cancelNotification(application.applicationContext, current.id)
-                    }
-                    // Fetch the current preferences
-                    val snoozeMinutes = userPreferencesRepository.defaultSnoozeMinutes.first()
-                    val soundResourceName = userPreferencesRepository.selectedNotificationSound.first()
-                        ?: UserPreferencesRepository.DEFAULT_SOUND_RESOURCE_NAME
-                    // Schedule new notification
-                    NotificationUtils.scheduleNotification(
-                        context = application.applicationContext,
-                        reminder = updated,
-                        snoozeMinutes = snoozeMinutes,
-                        soundResourceName = soundResourceName // Pass sound name
-                    )
+                if (original.reminderTime != updated.reminderTime) {
+                    NotificationUtils.cancelNotification(application.applicationContext, original.id)
                 }
-                onComplete(success)
-            } catch (e: Exception) {
-                Log.e("EditReminderVM", "Update failed", e)
-                onComplete(false)
+                val snoozeMinutes = userPreferencesRepository.defaultSnoozeMinutes.first()
+                val sound = userPreferencesRepository.selectedNotificationSound.first()
+                    ?: UserPreferencesRepository.DEFAULT_SOUND_RESOURCE_NAME
+                NotificationUtils.scheduleNotification(application.applicationContext, updated, snoozeMinutes, sound)
+                _uiState.update { it.copy(original = updated, draft = updated.toDraft()) }
+                _effects.send(EditReminderEffect.SAVED)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effects.send(EditReminderEffect.SAVE_FAILED)
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
             }
         }
     }

@@ -1,0 +1,24 @@
+<resources>
+    <string name="support_title">Support DotReminder</string>
+    <string name="support_hero_title">Made better with your support</string>
+    <string name="support_hero_body">A little support helps us keep improving DotReminder. Choose an ad below whenever you’d like to help.</string>
+    <string name="support_choose">Choose how to support</string>
+    <string name="support_standard_title">View an ad</string>
+    <string name="support_standard_body">Open a full-screen ad to support development.</string>
+    <string name="support_standard_action">View ad</string>
+    <string name="support_rewarded_title">Watch a full ad</string>
+    <string name="support_rewarded_body">Complete the ad for a thank-you message from us.</string>
+    <string name="support_rewarded_action">Watch ad</string>
+    <string name="support_loading">Loading your ad…</string>
+    <string name="support_showing">Ad is open…</string>
+    <string name="support_ad_error">This ad isn’t available right now. You can try again.</string>
+    <string name="support_retry">Try again</string>
+    <string name="support_cancel">Cancel loading</string>
+    <string name="support_banner_label">Advertisement</string>
+    <string name="support_banner_loading">Loading advertisement…</string>
+    <string name="support_banner_unavailable">No banner available right now.</string>
+    <string name="support_optional">Support is optional. You can return to your reminders at any time.</string>
+    <string name="support_thanks_title">Thank you for the support!</string>
+    <string name="support_thanks_body">Thanks for watching. Your support helps us keep making DotReminder better.</string>
+    <string name="support_thanks_done">Back to the app</string>
+</resources>

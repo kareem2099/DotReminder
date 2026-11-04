@@ -2,8 +2,16 @@ package com.FreeRave.remindme.service
 
 import com.FreeRave.remindme.model.User
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.tasks.await
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.userProfileChangeRequest
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import com.FreeRave.remindme.security.awaitAuth
 import javax.inject.Inject
+import com.FreeRave.remindme.security.mfa.FirebaseMfaChallenge
+import com.FreeRave.remindme.security.mfa.MfaRequired
+import com.google.firebase.auth.FirebaseAuthMultiFactorException
 
 class FirebaseAuthServiceImpl @Inject constructor(
     private val firestoreService: FirebaseService,
@@ -14,8 +22,27 @@ class FirebaseAuthServiceImpl @Inject constructor(
         return firebaseAuth.currentUser?.uid ?: ""
     }
 
+    override fun currentUserIdFlow(): Flow<String> = callbackFlow {
+        val listener = FirebaseAuth.AuthStateListener { auth ->
+            trySend(auth.currentUser?.uid ?: "")
+        }
+        firebaseAuth.addAuthStateListener(listener)
+        trySend(firebaseAuth.currentUser?.uid ?: "")
+        awaitClose { firebaseAuth.removeAuthStateListener(listener) }
+    }
+
+    override fun getUserDisplayName(): String? {
+        val user = firebaseAuth.currentUser ?: return null
+        val rawName = user.displayName?.takeIf { it.isNotBlank() }
+            ?: user.email?.split("@")?.getOrNull(0)?.takeIf { it.isNotBlank() }
+            ?: return null
+
+        val parts = rawName.trim().split("\\s+".toRegex())
+        return if (parts.size >= 2) "${parts[0]} ${parts[1]}" else parts.firstOrNull() ?: rawName
+    }
+
     override suspend fun refreshCurrentUser() {
-        firebaseAuth.currentUser?.reload()?.await()
+        firebaseAuth.currentUser?.reload()?.awaitAuth()
     }
 
     override suspend fun checkEmailVerification(
@@ -24,7 +51,7 @@ class FirebaseAuthServiceImpl @Inject constructor(
         onFailure: (Exception) -> Unit
     ) {
         try {
-            firebaseAuth.currentUser?.reload()?.await()
+            firebaseAuth.currentUser?.reload()?.awaitAuth()
             val isVerified = firebaseAuth.currentUser?.isEmailVerified ?: false
             if (isVerified) {
                 onVerified()
@@ -56,7 +83,7 @@ class FirebaseAuthServiceImpl @Inject constructor(
     }
 
     override suspend fun sendPasswordResetEmail(email: String) {
-        firebaseAuth.sendPasswordResetEmail(email).await() // Use injected firebaseAuth
+        firebaseAuth.sendPasswordResetEmail(email).awaitAuth() // Use injected firebaseAuth
     }
 
     override suspend fun loginWithEmail(
@@ -66,7 +93,7 @@ class FirebaseAuthServiceImpl @Inject constructor(
         onFailure: (Exception) -> Unit
     ) {
         try {
-            val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await() // Use injected firebaseAuth
+            val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).awaitAuth() // Use injected firebaseAuth
             authResult.user?.let { firebaseUser ->
                 val user = User(
                     id = firebaseUser.uid,
@@ -121,13 +148,20 @@ class FirebaseAuthServiceImpl @Inject constructor(
             val credential = com.google.firebase.auth.EmailAuthProvider
                 .getCredential(email, currentPassword)
 
-            user.reauthenticate(credential).await()
+            try { user.reauthenticate(credential).awaitAuth() }
+            catch (e: FirebaseAuthMultiFactorException) {
+                onFailure(MfaRequired(FirebaseMfaChallenge(e.resolver, user.uid, afterVerified = { verified ->
+                    verified.updatePassword(newPassword).awaitAuth()
+                })))
+                return
+            }
 
             // Step 2 — Update password
-            user.updatePassword(newPassword).await()
+            user.updatePassword(newPassword).awaitAuth()
 
             onSuccess()
-        } catch (e: com.google.firebase.auth.FirebaseAuthInvalidCredentialsException) {
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: com.google.firebase.auth.FirebaseAuthInvalidCredentialsException) {
             onFailure(Exception("Current password is incorrect"))
         } catch (e: com.google.firebase.auth.FirebaseAuthWeakPasswordException) {
             onFailure(Exception("New password is too weak. Use at least 6 characters"))
@@ -136,18 +170,4 @@ class FirebaseAuthServiceImpl @Inject constructor(
         }
     }
 
-    override suspend fun signUpWithEmail(
-        email: String,
-        password: String,
-        name: String,
-        onSuccess: () -> Unit,
-        onFailure: (Exception) -> Unit
-    ) {
-        try {
-            firebaseAuth.createUserWithEmailAndPassword(email, password).await() // Use injected firebaseAuth
-            onSuccess()
-        } catch (e: Exception) {
-            onFailure(e)
-        }
-    }
 }

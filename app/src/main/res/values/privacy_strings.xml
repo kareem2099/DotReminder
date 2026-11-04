@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="privacy_section">Privacy and your data</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="privacy_contact_support">Contact support</string>
+    <string name="privacy_support_email" translatable="false">support@dotsuite.dev</string>
+    <string name="privacy_policy_hint">How DotReminder handles your information</string>
+    <string name="privacy_browser_unavailable">No app available to open this link. Email support@dotsuite.dev for help.</string>
+    <string name="deletion_title">Request account and data deletion</string>
+    <string name="deletion_hint">Delete your DotReminder account and its associated data</string>
+    <string name="deletion_intro">Continue to DotSuite to send a deletion request by email. Opening the page does not submit a request or delete anything.</string>
+    <string name="deletion_scope">Deletion covers your sign-in account, profile, reminders and their saved locations, categories, templates and session records.</string>
+    <string name="deletion_timing">After confirming account ownership, we process your request within 30 days. You can also request deletion after uninstalling the app.</string>
+    <string name="deletion_warning">Completed deletion is permanent. Until it is completed, existing reminders may still notify you. Review the page for local copies and service-provider retention details.</string>
+    <string name="deletion_continue">Open deletion request page</string>
+</resources>

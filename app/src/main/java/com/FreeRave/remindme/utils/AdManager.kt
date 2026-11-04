@@ -17,7 +17,7 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.appopen.AppOpenAd
 
-class AdManager(private val app: Application) : DefaultLifecycleObserver {
+class AdManager(private val app: Application, private val canShow: () -> Boolean = { true }) : DefaultLifecycleObserver {
     private var enabled: Boolean = true
 
     private var appOpenAd: AppOpenAd? = null
@@ -50,7 +50,7 @@ class AdManager(private val app: Application) : DefaultLifecycleObserver {
     }
 
     fun showAdIfAvailable() {
-        if (!enabled || !isShowingAd && isAdAvailable()) {
+        if (enabled && canShow() && !isShowingAd && isAdAvailable()) {
             Log.d(LOG_TAG, "Will show ad.")
             val fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {

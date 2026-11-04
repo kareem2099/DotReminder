@@ -8,11 +8,14 @@ interface FacebookSignInOnlyService {
     fun getCallbackManager(): CallbackManager // To be used by the calling Activity/Fragment/Composable
     
     // Initiates the login flow and registers internal callbacks for fetching user data
-    fun signIn(
+    suspend fun signIn(
         activity: ComponentActivity,
         onSuccess: (User) -> Unit,
-        onError: (String) -> Unit
+        onFailure: (Exception) -> Unit
     )
+
+    fun requestCredential(activity: ComponentActivity,
+        onCredential: (com.google.firebase.auth.AuthCredential) -> Unit, onFailure: (Exception) -> Unit)
 
     // Helper to pass data to the CallbackManager from the Activity's onActivityResult
     fun passActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?)

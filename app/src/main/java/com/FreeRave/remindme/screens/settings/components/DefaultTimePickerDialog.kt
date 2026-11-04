@@ -1,36 +1,23 @@
 package com.FreeRave.remindme.screens.settings.components
 
-import android.app.TimePickerDialog
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import com.FreeRave.remindme.data.UserPreferencesRepository
-import java.util.Calendar
+import com.FreeRave.remindme.screens.settings.hasDefaultReminderTime
+import com.FreeRave.remindme.ui.reminder.components.ReminderTimeDialog
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Composable
 fun DefaultTimePickerDialog(
-    showDialog: Boolean,
-    defaultHour: Int,
-    defaultMinute: Int,
-    onTimeSelected: (hour: Int, minute: Int) -> Unit,
-    onDismiss: () -> Unit
+    showDialog: Boolean, defaultHour: Int, defaultMinute: Int,
+    onTimeSelected: (hour: Int, minute: Int) -> Unit, onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
-    if (showDialog) {
-        val calendar = Calendar.getInstance()
-        val initialHour = if (defaultHour != UserPreferencesRepository.NO_DEFAULT_TIME_SET) defaultHour else calendar.get(Calendar.HOUR_OF_DAY)
-        val initialMinute = if (defaultMinute != UserPreferencesRepository.NO_DEFAULT_TIME_SET) defaultMinute else calendar.get(Calendar.MINUTE)
-
-        TimePickerDialog(
-            context,
-            { _, hour: Int, minute: Int ->
-                onTimeSelected(hour, minute)
-            },
-            initialHour,
-            initialMinute,
-            false // Use 12 or 24 hour format based on system settings? For now, false = AM/PM.
-        ).apply {
-            setOnDismissListener { onDismiss() }
-            show()
-        }
+    if (!showDialog) return
+    val zone = ZoneId.systemDefault()
+    val time = if (hasDefaultReminderTime(defaultHour, defaultMinute)) LocalTime.of(defaultHour, defaultMinute) else LocalTime.now()
+    ReminderTimeDialog(LocalDate.now().atTime(time).atZone(zone).toInstant().toEpochMilli(), onDismiss) {
+        val selected = Instant.ofEpochMilli(it).atZone(zone)
+        onTimeSelected(selected.hour, selected.minute)
     }
 }

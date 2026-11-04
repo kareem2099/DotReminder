@@ -10,13 +10,19 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.viewModelScope
 import com.FreeRave.remindme.data.UserPreferencesRepository
 import com.FreeRave.remindme.model.User
+import com.FreeRave.remindme.R
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.FirebaseTooManyRequestsException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import kotlinx.coroutines.CancellationException
 import com.FreeRave.remindme.service.BiometricAuthManager 
 import com.FreeRave.remindme.service.BiometricAvailability 
 import com.FreeRave.remindme.service.FacebookSignInOnlyService
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
 import com.FreeRave.remindme.service.GoogleAuthServiceInterface 
 
-import com.FreeRave.remindme.service.VerificationService
 import com.google.firebase.auth.FirebaseAuth 
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,9 +30,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.FreeRave.remindme.model.Session
-import com.FreeRave.remindme.service.SessionRepository
-import java.util.UUID
+import com.FreeRave.remindme.service.AuthSessionRecorder
+import com.FreeRave.remindme.security.mfa.*
+import com.google.firebase.auth.FirebaseAuthMultiFactorException
+import com.FreeRave.remindme.security.lock.AppLockSession
+import com.FreeRave.remindme.security.lock.AppLockError
+import com.FreeRave.remindme.security.AuthNetworkTimeout
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
@@ -36,13 +47,45 @@ class AuthViewModel @Inject constructor(
     private val facebookSignInOnlyService: FacebookSignInOnlyService,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val biometricAuthManager: BiometricAuthManager, // Injected BiometricAuthManager
-    val verificationService: VerificationService,
-    private val sessionRepository: SessionRepository,
+    private val sessionRecorder: AuthSessionRecorder,
+    private val appLockSession: AppLockSession,
     @ApplicationContext private val applicationContext: Context // Injected ApplicationContext
 ) : ViewModel() {
 
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
+    private val _activeLoginMethod = MutableStateFlow<LoginMethod?>(null)
+    internal val activeLoginMethod: StateFlow<LoginMethod?> = _activeLoginMethod
+    private val _passwordResetState = MutableStateFlow<PasswordResetState>(PasswordResetState.Idle)
+    internal val passwordResetState: StateFlow<PasswordResetState> = _passwordResetState
+    private val _preferenceError = MutableStateFlow<String?>(null)
+    internal val preferenceError: StateFlow<String?> = _preferenceError
+
+    private enum class MfaPurpose { LOGIN, PASSWORD_CHANGE }
+    private var mfaPurpose: MfaPurpose? = null
+    private val secondFactor = MfaChallengeController(viewModelScope,
+        onVerified = { user ->
+            val purpose = mfaPurpose
+            mfaPurpose = null
+            if (purpose == MfaPurpose.LOGIN) acceptAuthenticatedUser(user)
+            else if (purpose == MfaPurpose.PASSWORD_CHANGE) _changePasswordState.value = ChangePasswordState.Success(
+                applicationContext.getString(R.string.mfa_password_changed))
+        }, onCancelled = {
+            if (mfaPurpose == MfaPurpose.PASSWORD_CHANGE) _changePasswordState.value = ChangePasswordState.Idle
+            else cancelLogin()
+            mfaPurpose = null
+        })
+    internal val secondFactorState = secondFactor.state
+    internal fun selectSecondFactor(id: String) = secondFactor.select(id)
+    internal fun verifySecondFactor(code: String) = secondFactor.verify(code)
+    internal fun editSecondFactor() = secondFactor.edit()
+    internal fun cancelSecondFactor() = secondFactor.cancel()
+    internal fun clearSecondFactor() {
+        secondFactor.clear()
+        if (mfaPurpose == MfaPurpose.PASSWORD_CHANGE) _changePasswordState.value = ChangePasswordState.Idle
+        if (mfaPurpose == MfaPurpose.LOGIN) cancelLogin()
+        mfaPurpose = null
+    }
 
     private val _rememberMeEnabled = MutableStateFlow(false)
     val rememberMeEnabled: StateFlow<Boolean> = _rememberMeEnabled
@@ -61,17 +104,19 @@ class AuthViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            userPreferencesRepository.rememberMeEnabled.collect { isEnabled ->
+            userPreferencesRepository.rememberMeEnabled.catch { _rememberMeEnabled.value = false }.collect { isEnabled ->
                 _rememberMeEnabled.value = isEnabled
             }
         }
         viewModelScope.launch {
-            userPreferencesRepository.rememberedEmail.collect { email ->
+            userPreferencesRepository.rememberedEmail.catch { _rememberedEmail.value = null }.collect { email ->
                 _rememberedEmail.value = email
             }
         }
         viewModelScope.launch {
-            userPreferencesRepository.biometricLoginEnabled.collect { isEnabled ->
+            combine(firebaseAuthService.currentUserIdFlow(), userPreferencesRepository.biometricLockPreference) { uid, preference ->
+                preference.protects(uid)
+            }.catch { _biometricLoginEnabled.value = false }.collect { isEnabled ->
                 _biometricLoginEnabled.value = isEnabled
             }
         }
@@ -109,132 +154,121 @@ class AuthViewModel @Inject constructor(
     }
 
     fun userToggledRememberMe(isEnabled: Boolean) {
+        _preferenceError.value = null
         viewModelScope.launch {
-            userPreferencesRepository.saveRememberMeEnabled(isEnabled)
+            try { userPreferencesRepository.saveRememberMeEnabled(isEnabled) }
+            catch (error: CancellationException) { throw error }
+            catch (_: Exception) { _preferenceError.value = applicationContext.getString(R.string.login_preference_error) }
         }
     }
 
-    // Renamed from setBiometricLoginEnabled for clarity, used for direct updates (e.g., disabling)
-    fun updateBiometricPreferenceDirectly(isEnabled: Boolean) {
+    fun updateBiometricPreferenceDirectly(isEnabled: Boolean, onResult: (Boolean) -> Unit = {}) {
+        val uid = firebaseAuth.currentUser?.uid ?: return
         viewModelScope.launch {
-            userPreferencesRepository.saveBiometricLoginEnabled(isEnabled)
+            try {
+                if (isEnabled) { onResult(false); return@launch }
+                userPreferencesRepository.saveBiometricLock(uid, false)
+                onResult(true)
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { onResult(false) }
         }
     }
 
-    // New function for handling biometric setup from Settings
-    private var biometricSetupAttemptCount = 0 // Separate counter for setup
-    fun attemptToEnableBiometricLogin(activity: FragmentActivity, onResult: (success: Boolean, message: String?) -> Unit) {
+    private var setupPrompt: androidx.biometric.BiometricPrompt? = null
+    fun cancelBiometricSetup() { setupPrompt?.cancelAuthentication(); setupPrompt = null }
+
+    fun attemptToEnableBiometricLogin(activity: FragmentActivity, onResult: (Boolean, String?) -> Unit) {
+        if (_biometricAuthState.value is BiometricAuthState.Authenticating) return
+        val uid = firebaseAuth.currentUser?.uid ?: return
         if (getBiometricAvailability() != BiometricAvailability.AVAILABLE) {
-            onResult(false, "Biometric authentication is not available on this device.")
-            return
+            onResult(false, applicationContext.getString(R.string.app_lock_unavailable)); return
         }
-
-        biometricSetupAttemptCount = 0 // Reset for a new setup sequence
-        _biometricAuthState.value = BiometricAuthState.Authenticating // Indicate process start
-
-        biometricAuthManager.authenticate(
-            activity = activity,
-            title = "Enable Biometric Login",
-            subtitle = "Confirm your identity to enable biometric login",
-            negativeButtonText = "Cancel",
-            onSuccess = {
-                viewModelScope.launch {
-                    userPreferencesRepository.saveBiometricLoginEnabled(true)
-                    _biometricAuthState.value = BiometricAuthState.Idle // Reset state after success
-                    onResult(true, "Biometric login enabled successfully.")
-                }
-            },
-            onFailedAttempt = {
-                biometricSetupAttemptCount++
-                if (biometricSetupAttemptCount >= maxBiometricAttempts) {
-                    viewModelScope.launch { userPreferencesRepository.saveBiometricLoginEnabled(false) }
-                    _biometricAuthState.value = BiometricAuthState.Error("Max attempts reached.") // Update state
-                    onResult(false, "Max attempts reached. Biometric login not enabled.")
-                } else {
-                    // Prompt usually stays, inform user via onResult if needed, or rely on system's "try again"
-                     _biometricAuthState.value = BiometricAuthState.FailedAttempt(remaining = maxBiometricAttempts - biometricSetupAttemptCount)
-                    // For settings, we might want to call onResult immediately for each failed attempt
-                    // onResult(false, "Biometric attempt failed. ${maxBiometricAttempts - biometricSetupAttemptCount} attempts remaining.")
-                    // However, the prompt typically handles "try again" itself. Let's let onError handle final failure.
-                }
-            },
-            onError = { errorCode, errString ->
-                viewModelScope.launch { userPreferencesRepository.saveBiometricLoginEnabled(false) } // Ensure it's off
-                val userCancelled = errorCode == androidx.biometric.BiometricPrompt.ERROR_USER_CANCELED ||
-                                  errorCode == androidx.biometric.BiometricPrompt.ERROR_NEGATIVE_BUTTON
-                val lockedOut = errorCode == androidx.biometric.BiometricPrompt.ERROR_LOCKOUT ||
-                                errorCode == androidx.biometric.BiometricPrompt.ERROR_LOCKOUT_PERMANENT
-                
-                val message = if (userCancelled) {
-                    "Biometric setup cancelled."
-                } else if (lockedOut) {
-                    "Biometric locked out. Too many attempts."
-                } else {
-                    errString.toString()
-                }
-                _biometricAuthState.value = BiometricAuthState.Error(message) // Update state
-                onResult(false, message)
-            }
-        )
+        val attempt = appLockSession.controller.begin(uid) ?: return
+        _biometricAuthState.value = BiometricAuthState.Authenticating
+        try {
+            setupPrompt = biometricAuthManager.authenticate(activity,
+                title = applicationContext.getString(R.string.app_lock_setting),
+                subtitle = applicationContext.getString(R.string.app_lock_prompt),
+                onSuccess = {
+                    setupPrompt = null
+                    if (firebaseAuth.currentUser?.uid != uid || !appLockSession.controller.accept(attempt)) {
+                        _biometricAuthState.value = BiometricAuthState.Idle
+                        onResult(false, applicationContext.getString(R.string.app_lock_cancelled))
+                    } else viewModelScope.launch {
+                        try {
+                            userPreferencesRepository.saveBiometricLock(uid, true)
+                            _biometricAuthState.value = BiometricAuthState.Idle
+                            onResult(true, applicationContext.getString(R.string.app_lock_enabled))
+                        } catch (e: CancellationException) { throw e }
+                        catch (_: Exception) {
+                            _biometricAuthState.value = BiometricAuthState.Idle
+                            onResult(false, applicationContext.getString(R.string.app_lock_failed))
+                        }
+                    }
+                }, onFailedAttempt = { }, onError = { _, _ ->
+                    setupPrompt = null
+                    appLockSession.controller.reject(attempt, AppLockError.CANCELLED)
+                    _biometricAuthState.value = BiometricAuthState.Idle
+                    onResult(false, applicationContext.getString(R.string.app_lock_cancelled))
+                })
+        } catch (_: RuntimeException) {
+            appLockSession.controller.reject(attempt, AppLockError.UNAVAILABLE)
+            _biometricAuthState.value = BiometricAuthState.Idle
+            onResult(false, applicationContext.getString(R.string.app_lock_unavailable))
+        }
     }
-
 
     fun getBiometricAvailability(): BiometricAvailability {
         return biometricAuthManager.getBiometricAvailability(applicationContext)
     }
 
     fun loginWithEmail(email: String, password: String) {
+        if (!validateLogin(email, password).valid || !beginLogin(LoginMethod.EMAIL)) return
         viewModelScope.launch {
-            _loginState.value = LoginState.Loading
-            firebaseAuthService.loginWithEmail(
-                email = email,
-                password = password,
-                onSuccess = { user: User ->
-                    viewModelScope.launch { // Ensure suspend functions are called in a coroutine
-                        if (_rememberMeEnabled.value) {
-                            userPreferencesRepository.saveRememberedEmail(user.email)
-                        }
-                        // If !rememberMeEnabled, saveRememberMeEnabled(false) would have already cleared the email
-                        _loginState.value = LoginState.Success(user)
-                        saveSession()
-                    }
-                },
-                onFailure = { e: Exception ->
-                    _loginState.value = LoginState.Error(e.message ?: "Login failed")
-                }
-            )
+            try {
+                firebaseAuthService.loginWithEmail(email.trim(), password,
+                    onSuccess = ::acceptAuthenticatedUser, onFailure = ::failLogin)
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { failLogin(e) }
         }
     }
 
-    // --- Google Sign-In Methods using GoogleAuthService ---
     fun signInWithGoogleCredentialManager(context: Context) {
+        if (!beginLogin(LoginMethod.GOOGLE)) return
         viewModelScope.launch {
-            _loginState.value = LoginState.Loading
-            googleAuthService.signInWithGoogleCredentialManager(
-                context = context,
-                onSuccess = { firebaseUser ->
-                    viewModelScope.launch {
-                        if (_rememberMeEnabled.value) {
-                            userPreferencesRepository.saveRememberedEmail(firebaseUser.email)
-                        }
-                        _loginState.value = LoginState.Success(firebaseUser)
-                        saveSession()
-                    }
-                },
-                onFailure = { exception ->
-                    _loginState.value = LoginState.Error(exception.message ?: "Google Sign-In failed.")
-                }
-            )
+            try {
+                googleAuthService.signInWithGoogleCredentialManager(context,
+                    onSuccess = ::acceptAuthenticatedUser, onFailure = ::failLogin)
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { failLogin(e) }
         }
     }
 
     // --- Firebase specific methods ---
-    suspend fun sendPasswordResetEmail(email: String) {
-        try {
-            firebaseAuthService.sendPasswordResetEmail(email)
-        } catch (e: Exception) {
-            _loginState.value = LoginState.Error(e.message ?: "Failed to send reset email")
+    fun sendPasswordResetEmail(email: String) {
+        if (_passwordResetState.value is PasswordResetState.Loading || _loginState.value is LoginState.Loading || mfaPurpose != null) return
+        if (!com.FreeRave.remindme.utils.ValidationUtils.isValidEmail(email.trim())) {
+            _passwordResetState.value = PasswordResetState.Error(applicationContext.getString(R.string.login_email_error))
+            return
         }
+        _passwordResetState.value = PasswordResetState.Loading
+        viewModelScope.launch {
+            try {
+                firebaseAuthService.sendPasswordResetEmail(email.trim())
+                _passwordResetState.value = PasswordResetState.Sent(email.trim())
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { _passwordResetState.value = PasswordResetState.Error(authError(e, reset = true)) }
+        }
+    }
+
+    fun resetPasswordResetState() {
+        if (_passwordResetState.value !is PasswordResetState.Loading) _passwordResetState.value = PasswordResetState.Idle
+    }
+
+    fun clearLoginError() {
+        _preferenceError.value = null
+        if (_loginState.value is LoginState.Error) _loginState.value = LoginState.Idle
+        if (_biometricAuthState.value is BiometricAuthState.Error) _biometricAuthState.value = BiometricAuthState.Idle
     }
 
     // General sign out for Firebase authenticated users
@@ -261,22 +295,13 @@ class AuthViewModel @Inject constructor(
 
     // --- New Facebook-Only Sign-In Methods ---
     fun signInWithFacebook(activity: ComponentActivity) {
-        _loginState.value = LoginState.Loading
-        facebookSignInOnlyService.signIn(
-            activity = activity,
-            onSuccess = { user ->
-                viewModelScope.launch { // Ensure suspend functions are called in a coroutine
-                    if (_rememberMeEnabled.value) {
-                        userPreferencesRepository.saveRememberedEmail(user.email)
-                    }
-                    _loginState.value = LoginState.Success(user)
-                    saveSession()
-                }
-            },
-            onError = { errorMsg ->
-                _loginState.value = LoginState.Error(errorMsg)
-            }
-        )
+        if (!beginLogin(LoginMethod.FACEBOOK)) return
+        viewModelScope.launch {
+            try {
+                facebookSignInOnlyService.signIn(activity, onSuccess = ::acceptAuthenticatedUser, onFailure = ::failLogin)
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) { failLogin(error) }
+        }
     }
 
     fun passFacebookActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -292,70 +317,104 @@ class AuthViewModel @Inject constructor(
         _loginState.value = LoginState.Idle // Reset state
     }
 
+    private fun beginLogin(method: LoginMethod): Boolean {
+        if (_loginState.value is LoginState.Loading || _passwordResetState.value is PasswordResetState.Loading || mfaPurpose != null) return false
+        _activeLoginMethod.value = method
+        _loginState.value = LoginState.Loading
+        return true
+    }
+
+    private fun acceptAuthenticatedUser(user: User) {
+        val current = firebaseAuth.currentUser
+        if (current == null || current.uid != user.id) { failLogin(IllegalStateException()); return }
+        appLockSession.controller.verifiedSignIn(current.uid)
+        _activeLoginMethod.value = null
+        _loginState.value = LoginState.Success(user.copy(isEmailVerified = current.isEmailVerified))
+        sessionRecorder.record(current.uid, (current.email ?: user.email).takeIf { _rememberMeEnabled.value })
+    }
+
+    private fun cancelLogin() {
+        _activeLoginMethod.value = null
+        _loginState.value = LoginState.Idle
+    }
+
+    private fun failLogin(error: Exception) {
+        if (error is CancellationException) throw error
+        if (error is GetCredentialCancellationException || error is MfaCancelled) { cancelLogin(); return }
+        if (error is FirebaseAuthMultiFactorException) {
+            mfaPurpose = MfaPurpose.LOGIN
+            _activeLoginMethod.value = null
+            _loginState.value = LoginState.SecondFactor
+            secondFactor.present(FirebaseMfaChallenge(error.resolver))
+            return
+        }
+        _activeLoginMethod.value = null
+        _loginState.value = LoginState.Error(authError(error))
+    }
+
+    private fun authError(error: Exception, reset: Boolean = false): String = applicationContext.getString(when (error) {
+        is FirebaseNetworkException -> R.string.login_error_network
+        is AuthNetworkTimeout -> R.string.login_error_network
+        is FirebaseTooManyRequestsException -> R.string.login_error_rate_limit
+        is FirebaseAuthInvalidCredentialsException, is FirebaseAuthInvalidUserException ->
+            if (reset) R.string.login_reset_error else R.string.login_error_credentials
+        else -> if (reset) R.string.login_reset_error else R.string.login_error_generic
+    })
+
+    fun hasBiometricSession(): Boolean = canUnlockBiometricSession(
+        _rememberMeEnabled.value, _rememberedEmail.value, _biometricLoginEnabled.value,
+        getBiometricAvailability() == BiometricAvailability.AVAILABLE,
+        firebaseAuth.currentUser?.uid, firebaseAuth.currentUser?.email)
+
     // --- Login State ---
     sealed class LoginState {
         object Idle : LoginState()
         object Loading : LoginState()
+        object SecondFactor : LoginState()
         data class Success(val user: User) : LoginState()
         data class Error(val message: String) : LoginState()
     }
 
     // --- Biometric Authentication Logic ---
     fun triggerBiometricAuth(activity: FragmentActivity) {
-        if (!_rememberMeEnabled.value || _rememberedEmail.value == null) {
-            _biometricAuthState.value = BiometricAuthState.Error("Remember Me is not active or no email is remembered.")
+        if (!hasBiometricSession()) {
+            _biometricAuthState.value = BiometricAuthState.Error(applicationContext.getString(R.string.login_error_biometric))
             return
         }
-        if (getBiometricAvailability() != BiometricAvailability.AVAILABLE) {
-            _biometricAuthState.value = BiometricAuthState.Error("Biometric authentication not available.")
-            return
-        }
-
-        biometricAttemptCount = 0 // Reset for a new sequence
+        if (!beginLogin(LoginMethod.BIOMETRIC)) return
+        biometricAttemptCount = 0
         _biometricAuthState.value = BiometricAuthState.Authenticating
-        launchBiometricPrompt(activity)
+        try { launchBiometricPrompt(activity) }
+        catch (_: RuntimeException) {
+            cancelLogin()
+            _biometricAuthState.value = BiometricAuthState.Error(applicationContext.getString(R.string.login_biometric_unavailable))
+        }
     }
 
     private fun launchBiometricPrompt(activity: FragmentActivity) {
-        biometricAuthManager.authenticate(
-            activity = activity,
+        biometricAuthManager.authenticate(activity = activity,
             onSuccess = {
-                val email = _rememberedEmail.value
-                // This is a placeholder for actual session restoration.
-                // In a real app, biometric success would unlock a token or credentials
-                // which are then used to properly authenticate and fetch user details.
-                if (email != null) {
-                     // Constructing a User object. In a real scenario, you might fetch full user details.
-                    val user = User(id = "bio_${System.currentTimeMillis()}", email = email, name = email.split("@")[0], isEmailVerified = true) // Placeholder
-                    _loginState.value = LoginState.Success(user)
+                val current = firebaseAuth.currentUser
+                if (current != null && hasBiometricSession()) {
                     _biometricAuthState.value = BiometricAuthState.Success
+                    acceptAuthenticatedUser(User(id = current.uid, email = current.email.orEmpty(),
+                        name = current.displayName ?: current.email.orEmpty().substringBefore('@'),
+                        photoUrl = current.photoUrl?.toString(), isEmailVerified = current.isEmailVerified))
                 } else {
-                     // Should not happen if initial checks in triggerBiometricAuth are correct
-                    _biometricAuthState.value = BiometricAuthState.Error("Failed to retrieve remembered user for biometric login.")
+                    cancelLogin()
+                    _biometricAuthState.value = BiometricAuthState.Error(applicationContext.getString(R.string.login_error_biometric))
                 }
             },
-            onFailedAttempt = { // This is BiometricPrompt's onAuthenticationFailed()
+            onFailedAttempt = {
                 biometricAttemptCount++
-                if (biometricAttemptCount >= maxBiometricAttempts) {
-                    _biometricAuthState.value = BiometricAuthState.Error("Max biometric attempts reached. Please log in manually.")
-                    // The BiometricPrompt itself might also call onError with ERROR_LOCKOUT
-                } else {
-                    // Inform UI about a failed attempt, prompt might still be visible
-                    _biometricAuthState.value = BiometricAuthState.FailedAttempt(remaining = maxBiometricAttempts - biometricAttemptCount)
-                }
+                _biometricAuthState.value = BiometricAuthState.FailedAttempt((maxBiometricAttempts - biometricAttemptCount).coerceAtLeast(0))
             },
-            onError = { errorCode, errString -> // This is BiometricPrompt's onAuthenticationError()
-                val message = errString.toString()
-                // Check for specific error codes from BiometricPrompt, like user cancellation
-                if (errorCode == androidx.biometric.BiometricPrompt.ERROR_USER_CANCELED || errorCode == androidx.biometric.BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
-                    _biometricAuthState.value = BiometricAuthState.Idle // User cancelled
-                } else if (errorCode == androidx.biometric.BiometricPrompt.ERROR_LOCKOUT || errorCode == androidx.biometric.BiometricPrompt.ERROR_LOCKOUT_PERMANENT) {
-                    _biometricAuthState.value = BiometricAuthState.Error("Biometric locked out. Too many attempts.")
-                } else {
-                    _biometricAuthState.value = BiometricAuthState.Error(message)
-                }
-            }
-        )
+            onError = { errorCode, message ->
+                cancelLogin()
+                val cancelled = errorCode == androidx.biometric.BiometricPrompt.ERROR_USER_CANCELED ||
+                    errorCode == androidx.biometric.BiometricPrompt.ERROR_NEGATIVE_BUTTON
+                _biometricAuthState.value = if (cancelled) BiometricAuthState.Idle else BiometricAuthState.Error(message.toString())
+            })
     }
 
     sealed class BiometricAuthState {
@@ -371,8 +430,9 @@ class AuthViewModel @Inject constructor(
     val changePasswordState: StateFlow<ChangePasswordState> = _changePasswordState
 
     fun changePassword(currentPassword: String, newPassword: String) {
+        if (_changePasswordState.value is ChangePasswordState.Loading || mfaPurpose != null) return
+        _changePasswordState.value = ChangePasswordState.Loading
         viewModelScope.launch {
-            _changePasswordState.value = ChangePasswordState.Loading
 
             firebaseAuthService.reauthenticateAndChangePassword(
                 currentPassword = currentPassword,
@@ -382,8 +442,12 @@ class AuthViewModel @Inject constructor(
                         ChangePasswordState.Success("Password changed successfully.")
                 },
                 onFailure = { e ->
-                    _changePasswordState.value =
-                        ChangePasswordState.Error(e.message ?: "Failed to change password.")
+                    if (e is MfaRequired) {
+                        mfaPurpose = MfaPurpose.PASSWORD_CHANGE
+                        _changePasswordState.value = ChangePasswordState.SecondFactor
+                        secondFactor.present(e.challenge)
+                    } else _changePasswordState.value = ChangePasswordState.Error(
+                        applicationContext.getString(R.string.mfa_password_change_failed))
                 }
             )
         }
@@ -396,15 +460,10 @@ class AuthViewModel @Inject constructor(
     sealed class ChangePasswordState {
         object Idle : ChangePasswordState()
         object Loading : ChangePasswordState()
+        object SecondFactor : ChangePasswordState()
         data class Success(val message: String) : ChangePasswordState()
         data class Error(val message: String) : ChangePasswordState()
     }
 
-    private fun saveSession() {
-        viewModelScope.launch {
-            val sessionId = UUID.randomUUID().toString()
-            userPreferencesRepository.saveCurrentSessionId(sessionId)
-            sessionRepository.saveSession(Session.createForCurrentDevice(sessionId))
-        }
-    }
+    override fun onCleared() { cancelBiometricSetup(); secondFactor.clear() }
 }

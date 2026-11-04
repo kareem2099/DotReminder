@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_lock_title">Unlock DotReminder</string>
+    <string name="app_lock_prompt">Confirm your identity to open your account</string>
+    <string name="app_lock_intro">Your account is locked on this device. Use your fingerprint or another supported strong biometric to continue.</string>
+    <string name="app_lock_unlock">Unlock with biometrics</string>
+    <string name="app_lock_checking">Checking account protection…</string>
+    <string name="app_lock_authenticating">Confirm on your device…</string>
+    <string name="app_lock_sign_in">Sign in again</string>
+    <string name="app_lock_fallback">You can end this saved session and sign in again with your account credentials and any required two-step verification.</string>
+    <string name="app_lock_cancelled">Your account is still locked. Try biometrics again or sign in again.</string>
+    <string name="app_lock_unavailable">Strong biometrics aren’t available right now. Retry or sign in again.</string>
+    <string name="app_lock_lockout">Biometrics are temporarily locked. Wait and retry, or sign in again.</string>
+    <string name="app_lock_failed">Couldn’t unlock your account. Try again.</string>
+    <string name="app_lock_preferences">Couldn’t load account protection. Retry or sign in again.</string>
+    <string name="app_lock_sign_out_error">Couldn’t end the saved session. Your account remains locked.</string>
+    <string name="app_lock_retry">Retry</string>
+    <string name="app_lock_setting">Biometric app lock</string>
+    <string name="app_lock_enabled">Biometric app lock enabled for this account.</string>
+    <string name="app_lock_setting_hint">Require biometrics when opening this account or returning from the background</string>
+</resources>

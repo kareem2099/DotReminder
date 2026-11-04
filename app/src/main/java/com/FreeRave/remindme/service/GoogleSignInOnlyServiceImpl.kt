@@ -13,7 +13,8 @@ class GoogleSignInOnlyServiceImpl @Inject constructor() : GoogleSignInOnlyServic
         try {
             val credentialManager = CredentialManager.create(context)
             credentialManager.clearCredentialState(ClearCredentialStateRequest())
-        } catch (e: Exception) {
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) {
             // Ignore if clear state fails
         }
     }

@@ -1,29 +1,19 @@
 package com.FreeRave.remindme.screens.settings.components
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.FreeRave.remindme.R
 
 @Composable
-fun SecuritySettingsSection(
-    onAccountSecurityClicked: () -> Unit
-) {
-    Column {
-        Text(
-            text = "Security", // This title can remain if the section itself is still visually grouped
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-        )
-        SettingItem(
-            title = "Account Security",
-            currentValue = "Manage 2FA, password", // Or some other descriptive text
-            onClick = onAccountSecurityClicked
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+internal fun SecuritySettingsSection(onAccountSecurityClicked: () -> Unit, onSignOutClicked: () -> Unit, enabled: Boolean) {
+    SettingsSection(stringResource(R.string.settings_account)) {
+        SettingItem(stringResource(R.string.settings_security), stringResource(R.string.settings_security_hint),
+            onAccountSecurityClicked, icon = Icons.Outlined.Shield)
+        SettingsDivider()
+        SettingItem(stringResource(R.string.settings_sign_out), stringResource(R.string.settings_sign_out_hint),
+            onSignOutClicked, icon = Icons.AutoMirrored.Outlined.Logout, enabled = enabled)
     }
 }

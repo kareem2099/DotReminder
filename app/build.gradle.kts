@@ -30,13 +30,9 @@ android {
         applicationId = "com.FreeRave.remindme"
         minSdk = 29
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.0.6"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        val geminiApiKey = getApiKey("GEMINI_API_KEY")
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
-
+        versionCode = 8
+        versionName = "0.0.7"
+        testInstrumentationRunner = providers.gradleProperty("uiReviewRunner").getOrElse("androidx.test.runner.AndroidJUnitRunner")
 
 
         // Custom LLM configuration
@@ -91,6 +87,7 @@ android {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -165,7 +162,8 @@ dependencies {
     implementation(libs.libphonenumber)
     implementation(libs.zxing.core)
     implementation(libs.natty)
-    implementation(libs.google.ai.generativeai)
+    // Natty uses SLF4J 1.7. Supply its no-op binding without logging reminder text.
+    runtimeOnly(libs.slf4j.nop)
     implementation(libs.gson)
 
     implementation(libs.kotlinx.coroutines.play.services)

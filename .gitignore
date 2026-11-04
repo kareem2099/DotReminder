@@ -27,6 +27,9 @@ kapt_debug_output.txt
 
 # Firebase & Local Tools
 .firebase/
+firebase-debug*.log
+firestore-debug.log
+ui-debug.log
 .firebaserc
 firebug.json
 todo_list.json
@@ -36,9 +39,8 @@ todo_list.json
 .vscode/
 app/build/generated/
 *.class
-
-# Gradle
-gradle/wrapper/gradle-wrapper.jar
+__pycache__/
+*.pyc
 
 # Release
 *.apk
@@ -48,6 +50,3 @@ app/release/
 
 # Crash reports
 crashlytics-build.properties
-
-# gradle wrapper
-gradle/wrapper/gradle-wrapper.jar

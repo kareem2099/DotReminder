@@ -1,0 +1,37 @@
+<resources>
+    <string name="polish_calendar_scroll">Swipe across to see all days.</string>
+    <string name="polish_time_hint">Choose the time for your reminder.</string>
+    <string name="polish_hour">Hour</string>
+    <string name="polish_minute">Minute</string>
+    <string name="polish_hour_24_error">Enter an hour from 0 to 23.</string>
+    <string name="polish_hour_12_error">Enter an hour from 1 to 12.</string>
+    <string name="polish_minute_error">Enter minutes from 0 to 59.</string>
+    <string name="polish_delete_reminder">Delete reminder?</string>
+    <string name="polish_delete_body">This removes the reminder and cancels its notification.</string>
+    <string name="polish_delete">Delete</string>
+    <string name="polish_keep">Keep reminder</string>
+    <string name="polish_home_error_title">Couldn’t load your reminders</string>
+    <string name="polish_home_error_body">Check your connection and try again. Your saved reminders haven’t been removed.</string>
+    <string name="polish_retry">Try again</string>
+    <string name="polish_location_title">Choose a location</string>
+    <string name="polish_map_title">Choose on the map</string>
+    <string name="polish_location_hint">Enter coordinates, search for an address, or use your current location.</string>
+    <string name="polish_map_hint">Tap the map to choose a place, or enter coordinates below.</string>
+    <string name="polish_latitude">Latitude</string>
+    <string name="polish_longitude">Longitude</string>
+    <string name="polish_radius">Radius in metres</string>
+    <string name="polish_latitude_error">Enter a latitude from −90 to 90.</string>
+    <string name="polish_longitude_error">Enter a longitude from −180 to 180.</string>
+    <string name="polish_radius_error">Enter a radius greater than zero.</string>
+    <string name="polish_address">Address or place</string>
+    <string name="polish_search_address">Find address</string>
+    <string name="polish_current_location">Use current location</string>
+    <string name="polish_location_loading">Finding your location…</string>
+    <string name="polish_address_loading">Finding this address…</string>
+    <string name="polish_location_permission">Location access wasn’t granted. You can still enter coordinates.</string>
+    <string name="polish_location_unavailable">Couldn’t find your location. Try again or enter coordinates.</string>
+    <string name="polish_address_unavailable">Couldn’t find that address. Try another search or enter coordinates.</string>
+    <string name="polish_map_unavailable">The map is unavailable. You can still enter coordinates below.</string>
+    <string name="polish_location_save">Use this location</string>
+    <string name="polish_location_selected">Selected location</string>
+</resources>

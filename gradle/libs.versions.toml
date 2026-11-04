@@ -32,6 +32,7 @@ googleServices = "4.4.4"
 androidx-biometric = "1.1.0"
 zxing = "3.5.4"
 natty = "0.13"
+slf4j = "1.7.36"
 googleAiGenerativeAi = "0.9.0"
 accompanist = "0.36.0"
 androidxCoreSplashscreen = "1.2.0"
@@ -101,6 +102,7 @@ libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", vers
 androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "androidx-biometric" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 natty = { group = "com.joestelmach", name = "natty", version.ref = "natty" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 google-ai-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "googleAiGenerativeAi" }
 accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist" }
 javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }

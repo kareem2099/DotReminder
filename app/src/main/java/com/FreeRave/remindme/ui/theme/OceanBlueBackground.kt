@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import com.FreeRave.remindme.data.ThemeSetting
 
 // Premium Ocean Blue gradient backgrounds with radial effects
@@ -227,85 +229,98 @@ val CandyDarkOverlay = Brush.verticalGradient(
 @Composable
 fun OceanBlueBackground(
     themeSetting: ThemeSetting,
-    useDarkTheme: Boolean,
+    useDarkTheme: Boolean = androidx.compose.foundation.isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val effectiveDarkTheme = when (themeSetting) {
+        ThemeSetting.LIGHT -> false
+        ThemeSetting.DARK -> true
+        ThemeSetting.SYSTEM -> isSystemDark
+        ThemeSetting.OCEAN_BLUE -> useDarkTheme || isSystemDark
+        ThemeSetting.FOREST_GREEN -> useDarkTheme || isSystemDark
+        ThemeSetting.SUNSET_ORANGE -> useDarkTheme || isSystemDark
+        ThemeSetting.MIDNIGHT_PURPLE -> true
+        ThemeSetting.CANDY -> useDarkTheme || isSystemDark
+    }
+
     val (gradient, overlay, hasEffects) = when (themeSetting) {
         ThemeSetting.OCEAN_BLUE -> {
-            val grad = if (useDarkTheme) OceanBlueDarkGradient else OceanBlueLightGradient
-            val over = if (useDarkTheme) OceanBlueDarkOverlay else OceanBlueLightOverlay
+            val grad = if (effectiveDarkTheme) OceanBlueDarkGradient else OceanBlueLightGradient
+            val over = if (effectiveDarkTheme) OceanBlueDarkOverlay else OceanBlueLightOverlay
             Triple(grad, over, true)
         }
         ThemeSetting.FOREST_GREEN -> {
-            val grad = if (useDarkTheme) ForestGreenDarkGradient else ForestGreenLightGradient
-            val over = if (useDarkTheme) ForestGreenDarkOverlay else ForestGreenLightOverlay
+            val grad = if (effectiveDarkTheme) ForestGreenDarkGradient else ForestGreenLightGradient
+            val over = if (effectiveDarkTheme) ForestGreenDarkOverlay else ForestGreenLightOverlay
             Triple(grad, over, true)
         }
         ThemeSetting.SUNSET_ORANGE -> {
-            val grad = if (useDarkTheme) SunsetOrangeDarkGradient else SunsetOrangeLightGradient
-            val over = if (useDarkTheme) SunsetOrangeDarkOverlay else SunsetOrangeLightOverlay
+            val grad = if (effectiveDarkTheme) SunsetOrangeDarkGradient else SunsetOrangeLightGradient
+            val over = if (effectiveDarkTheme) SunsetOrangeDarkOverlay else SunsetOrangeLightOverlay
             Triple(grad, over, true)
         }
         ThemeSetting.MIDNIGHT_PURPLE -> {
-            val grad = if (useDarkTheme) MidnightPurpleDarkGradient else MidnightPurpleLightGradient
-            val over = if (useDarkTheme) MidnightPurpleDarkOverlay else MidnightPurpleLightOverlay
+            val grad = if (effectiveDarkTheme) MidnightPurpleDarkGradient else MidnightPurpleLightGradient
+            val over = if (effectiveDarkTheme) MidnightPurpleDarkOverlay else MidnightPurpleLightOverlay
             Triple(grad, over, true)
         }
         ThemeSetting.CANDY -> {
-            val grad = if (useDarkTheme) CandyDarkGradient else CandyLightGradient
-            val over = if (useDarkTheme) CandyDarkOverlay else CandyLightOverlay
+            val grad = if (effectiveDarkTheme) CandyDarkGradient else CandyLightGradient
+            val over = if (effectiveDarkTheme) CandyDarkOverlay else CandyLightOverlay
             Triple(grad, over, true)
         }
         else -> Triple(null, null, false)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(
-                if (gradient != null && overlay != null) {
-                    Modifier
-                        .background(gradient)
-                        .background(overlay)
-                } else {
-                    Modifier.background(Color.Transparent)
-                }
-            )
+    RemindMeAppTheme(
+        themeSetting = themeSetting,
+        useDarkTheme = effectiveDarkTheme
     ) {
-        // Add premium visual effects
-        if (hasEffects) {
-            when (themeSetting) {
-                ThemeSetting.LIGHT -> {
-                    // No effects for light theme
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (gradient != null && overlay != null) {
+                            Modifier
+                                .background(gradient)
+                                .background(overlay)
+                        } else {
+                            Modifier.background(Color.Transparent)
+                        }
+                    )
+            ) {
+                // Add premium visual effects
+                if (hasEffects) {
+                    when (themeSetting) {
+                        ThemeSetting.LIGHT -> {}
+                        ThemeSetting.DARK -> {}
+                        ThemeSetting.SYSTEM -> {}
+                        ThemeSetting.OCEAN_BLUE -> {
+                            OceanBlueParticles(themeSetting = themeSetting)
+                            OceanBlueWaveAnimation(themeSetting = themeSetting)
+                        }
+                        ThemeSetting.FOREST_GREEN -> {
+                            ForestGreenParticles(themeSetting = themeSetting)
+                            ForestGreenLeafAnimation(themeSetting = themeSetting)
+                        }
+                        ThemeSetting.SUNSET_ORANGE -> {
+                            SunsetOrangeParticles(themeSetting = themeSetting)
+                            SunsetOrangeGlowAnimation(themeSetting = themeSetting)
+                        }
+                        ThemeSetting.MIDNIGHT_PURPLE -> {}
+                        ThemeSetting.CANDY -> {}
+                    }
                 }
-                ThemeSetting.DARK -> {
-                    // No effects for dark theme
-                }
-                ThemeSetting.SYSTEM -> {
-                    // No effects for system theme
-                }
-                ThemeSetting.OCEAN_BLUE -> {
-                    OceanBlueParticles(themeSetting = themeSetting)
-                    OceanBlueWaveAnimation(themeSetting = themeSetting)
-                }
-                ThemeSetting.FOREST_GREEN -> {
-                    ForestGreenParticles(themeSetting = themeSetting)
-                    ForestGreenLeafAnimation(themeSetting = themeSetting)
-                }
-                ThemeSetting.SUNSET_ORANGE -> {
-                    SunsetOrangeParticles(themeSetting = themeSetting)
-                    SunsetOrangeGlowAnimation(themeSetting = themeSetting)
-                }
-                ThemeSetting.MIDNIGHT_PURPLE -> {
-                    // No effects defined for midnight purple theme yet
-                }
-                ThemeSetting.CANDY -> {
-                    // No effects defined for candy theme yet
-                }
+
+                content()
             }
         }
-
-        content()
     }
 }
 

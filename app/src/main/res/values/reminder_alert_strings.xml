@@ -1,0 +1,14 @@
+<resources>
+    <string name="reminder_alert_due">Your reminder is due.</string>
+    <string name="reminder_alert_dismiss">Dismiss</string>
+    <string name="reminder_alert_snooze">Snooze %1$d min</string>
+    <string name="reminder_alert_access_title">Allow reminder alerts</string>
+    <string name="reminder_alert_access_intro">Allow notifications so your reminders can appear and play a sound at their scheduled time.</string>
+    <string name="reminder_alert_channel_intro">Reminder alerts are turned off in your phone settings. Enable them before saving this reminder.</string>
+    <string name="reminder_alert_exact_title">Allow precise reminders</string>
+    <string name="reminder_alert_exact_intro">Allow alarms and reminders in your phone settings so this reminder can alert you at the time you chose.</string>
+    <string name="reminder_alert_settings">Open settings</string>
+    <string name="reminder_alert_allow">Allow notifications</string>
+    <string name="reminder_alert_cancel">Not now</string>
+    <string name="reminder_alert_settings_error">Couldn’t open settings. Enable notifications and alarms for DotReminder in your phone settings, then try saving again.</string>
+</resources>

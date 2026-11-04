@@ -19,15 +19,17 @@ class SessionRepository @Inject constructor(
     private fun sessionsCollection(userId: String) =
         firestore.collection("users").document(userId).collection("sessions")
 
-    suspend fun saveSession(session: Session): Boolean {
+    suspend fun saveSession(session: Session, expectedUid: String): Boolean {
         val userId = firebaseAuth.currentUser?.uid ?: return false
+        if (userId != expectedUid) return false
         return try {
             sessionsCollection(userId)
                 .document(session.sessionId)
                 .set(session.toMap())
                 .await()
             true
-        } catch (e: Exception) { false }
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) { false }
     }
 
     fun getSessions(userId: String): Flow<List<Session>> = callbackFlow {
@@ -38,11 +40,11 @@ class SessionRepository @Inject constructor(
                 val sessions = snapshot?.documents?.mapNotNull { doc ->
                     try {
                         Session(
-                            sessionId = doc.getString("sessionId") ?: doc.id,
+                            sessionId = doc.id,
                             deviceName = doc.getString("deviceName") ?: "Unknown Device",
                             deviceModel = doc.getString("deviceModel") ?: "",
-                            loginTime = doc.getTimestamp("loginTime") ?: Timestamp.now(),
-                            lastActive = doc.getTimestamp("lastActive") ?: Timestamp.now()
+                            loginTime = doc.getTimestamp("loginTime") ?: Timestamp(0, 0),
+                            lastActive = doc.getTimestamp("lastActive") ?: Timestamp(0, 0)
                         )
                     } catch (e: Exception) { null }
                 } ?: emptyList()

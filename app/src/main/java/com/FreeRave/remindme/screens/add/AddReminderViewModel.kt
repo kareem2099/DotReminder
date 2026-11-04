@@ -5,14 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.FreeRave.remindme.data.UserPreferencesRepository
 import com.FreeRave.remindme.model.Reminder
-import com.FreeRave.remindme.utils.NotificationUtils
+import com.FreeRave.remindme.model.AiReminderDraft
 import com.FreeRave.remindme.service.FirebaseAuthServiceInterface
-import com.FreeRave.remindme.service.ReminderService
 import com.FreeRave.remindme.service.GeminiService 
-import com.FreeRave.remindme.utils.NLPUtils
-import com.FreeRave.remindme.utils.ParsedReminderInfo
+import com.FreeRave.remindme.service.ReminderService
+import com.FreeRave.remindme.ui.reminder.DAY_MILLIS
 import com.FreeRave.remindme.utils.LocationHistoryEntry
+import com.FreeRave.remindme.utils.NLPUtils
+import com.FreeRave.remindme.utils.NotificationUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +23,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject 
-import javax.inject.Inject
 
 @HiltViewModel
 class AddReminderViewModel @Inject constructor(
@@ -30,6 +32,12 @@ class AddReminderViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val geminiService: GeminiService
 ) : ViewModel() {
+
+    private val _isParsing = MutableStateFlow(false)
+    val isParsing: StateFlow<Boolean> = _isParsing.asStateFlow()
+
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
     private val _nlpInputText = MutableStateFlow("")
     val nlpInputText: StateFlow<String> = _nlpInputText.asStateFlow()
@@ -81,6 +89,18 @@ class AddReminderViewModel @Inject constructor(
 
     fun onNlpInputChanged(text: String) {
         _nlpInputText.update { text }
+    }
+
+    internal fun applyAiDraft(draft: AiReminderDraft) {
+        onNlpInputChanged(draft.sourceText)
+        onTitleChanged(draft.title)
+        onDescriptionChanged("")
+        onCategoryChanged(draft.category)
+        onReminderTimeChanged(draft.reminderTime)
+        onIsRecurringChanged(draft.isRecurring)
+        onRecurrenceIntervalChanged(if (draft.isRecurring) draft.recurrenceIntervalMillis else null)
+        onRecurrenceEndTimeChanged(if (draft.isRecurring) draft.recurrenceEndTime else null)
+        onIsLocationBasedChanged(false)
     }
 
     fun onTitleChanged(text: String) {
@@ -165,13 +185,13 @@ class AddReminderViewModel @Inject constructor(
         }
     }
 
-    // 👇 The magic happens here: AI function with fallback mechanism
     fun parseNaturalLanguageInput() {
         val inputText = _nlpInputText.value
-        if (inputText.isBlank()) {
+        if (inputText.isBlank() || _isParsing.value) {
             return
         }
 
+        _isParsing.value = true
         viewModelScope.launch {
             try {
                 // Attempt to connect to Gemini 2.5 Flash
@@ -190,7 +210,12 @@ class AddReminderViewModel @Inject constructor(
                         _reminderTimeMillis.update { jsonObject.getLong("reminderTime") }
                     }
 
-                    _isRecurring.update { jsonObject.optBoolean("isRecurring", false) }
+                    val recurring = jsonObject.optBoolean("isRecurring", false)
+                    _isRecurring.value = recurring
+                    _recurrenceIntervalMillis.value = if (recurring) {
+                        jsonObject.optLong("recurrenceIntervalMillis", DAY_MILLIS).takeIf { it > 0 } ?: DAY_MILLIS
+                    } else null
+                    _recurrenceEndTime.value = null
 
                     val detectedCategory = jsonObject.optString("category", "")
                     if (detectedCategory.isNotBlank() && detectedCategory != "null") {
@@ -200,10 +225,13 @@ class AddReminderViewModel @Inject constructor(
                     // Fallback: If AI returns null (e.g., network issue), use the old NLP
                     fallbackToOfflineNLP(inputText)
                 }
-                } catch (e: Exception) {
-                    android.util.Log.e("AddReminderViewModel", "AI Parsing failed, falling back to NLPUtils", e)
-                    // Fallback: If any JSON error occurs, revert to the old NLP
-                    fallbackToOfflineNLP(inputText)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                android.util.Log.e("AddReminderViewModel", "AI Parsing failed, falling back to NLPUtils", e)
+                fallbackToOfflineNLP(inputText)
+            } finally {
+                _isParsing.value = false
             }
 
             // If the event is recurring but no start time is set
@@ -228,6 +256,7 @@ class AddReminderViewModel @Inject constructor(
         customId: String,
         onComplete: (Boolean, String?) -> Unit
     ) {
+        if (_isSaving.value) return
         val currentTitle = _title.value
         val currentReminderTime = _reminderTimeMillis.value
 
@@ -235,7 +264,7 @@ class AddReminderViewModel @Inject constructor(
             onComplete(false, null)
             return
         }
-        if (currentReminderTime == null) {
+        if (currentReminderTime == null || currentReminderTime <= System.currentTimeMillis() || authService.getCurrentUserId().isBlank()) {
             onComplete(false, null)
             return
         }
@@ -246,6 +275,7 @@ class AddReminderViewModel @Inject constructor(
         }
 
 
+        _isSaving.value = true
         viewModelScope.launch {
             try {
                 val reminder = Reminder(
@@ -278,14 +308,19 @@ class AddReminderViewModel @Inject constructor(
                         context = application.applicationContext,
                         reminder = savedReminder,
                         snoozeMinutes = snoozeMinutes,
-                        soundResourceName = soundResourceName
+                        soundResourceName = soundResourceName,
+                        allowDueNow = true
                     )
                     onComplete(true, savedReminder.id)
                 } else {
                     onComplete(false, null)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 onComplete(false, null)
+            } finally {
+                _isSaving.value = false
             }
         }
     }

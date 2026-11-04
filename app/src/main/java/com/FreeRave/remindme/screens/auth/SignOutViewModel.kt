@@ -1,29 +1,23 @@
 package com.FreeRave.remindme.screens.auth
 
-import android.app.Application
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.FreeRave.remindme.service.GoogleAuthServiceInterface
+import com.FreeRave.remindme.service.GoogleSignInOnlyService
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class SignOutViewModel @Inject constructor(
-    private val googleAuthService: GoogleAuthServiceInterface,
-    private val application: Application
+    auth: FirebaseAuth,
+    googleSession: GoogleSignInOnlyService,
+    @ApplicationContext context: Context
 ) : ViewModel() {
-
-    private val _signOutComplete = MutableStateFlow(false)
-    val signOutComplete = _signOutComplete.asStateFlow()
-
-    fun signOut() {
-        viewModelScope.launch {
-            googleAuthService.signOut(application) {
-                _signOutComplete.value = true
-            }
-        }
-    }
+    private val controller = SignOutController(FirebaseSignOutGateway(auth, googleSession, context),
+        auth.currentUser?.let { SignOutAccount(it.displayName.orEmpty(), it.email.orEmpty()) })
+    internal val state = controller.state
+    fun signOut() { viewModelScope.launch { controller.signOut() } }
 }

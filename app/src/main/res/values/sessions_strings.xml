@@ -1,0 +1,37 @@
+<resources>
+    <string name="sessions_title">Devices &amp; sessions</string>
+    <string name="sessions_intro">Review the devices recorded for your account.</string>
+    <string name="sessions_scope">Removing a record clears it from this list. It does not sign out that device.</string>
+    <string name="sessions_current">This device</string>
+    <string name="sessions_other">Other session records</string>
+    <string name="sessions_saved">Saved session records</string>
+    <string name="sessions_unknown_device">Unknown device</string>
+    <string name="sessions_login">Signed in</string>
+    <string name="sessions_active">Last recorded activity</string>
+    <string name="sessions_not_recorded">Not recorded</string>
+    <string name="sessions_timestamp">%1$s · %2$s</string>
+    <string name="sessions_remove">Remove record</string>
+    <string name="sessions_remove_device">Remove record for %1$s</string>
+    <string name="sessions_clear_others">Clear other records</string>
+    <string name="sessions_remove_one_title">Remove this session record?</string>
+    <string name="sessions_remove_one_body">The record for %1$s will be removed from this list. This does not sign out the device.</string>
+    <string name="sessions_remove_others_title">Clear other session records?</string>
+    <string name="sessions_remove_others_body">All other session records will be removed from this list. This device stays listed. Other devices will remain signed in.</string>
+    <string name="sessions_removing">Removing…</string>
+    <string name="sessions_remove_failed">Couldn’t remove the records. Please try again.</string>
+    <string name="sessions_removed_one">Session record removed.</string>
+    <string name="sessions_removed_others">Other session records removed.</string>
+    <string name="sessions_cancel">Cancel</string>
+    <string name="sessions_loading">Loading your devices…</string>
+    <string name="sessions_load_error">Couldn’t load your devices</string>
+    <string name="sessions_load_error_body">Check your connection and try again.</string>
+    <string name="sessions_retry">Try again</string>
+    <string name="sessions_empty">No session records yet</string>
+    <string name="sessions_empty_body">Saved sign-ins will appear here.</string>
+    <string name="sessions_only_current">Only this session is listed.</string>
+    <string name="sessions_identity_missing">This session couldn’t be identified. Record removal is unavailable.</string>
+    <plurals name="sessions_count">
+        <item quantity="one">%d session record</item>
+        <item quantity="other">%d session records</item>
+    </plurals>
+</resources>

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,7 +38,10 @@ fun SmartTextField(
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text,
-    smartSuggestions: Boolean = true
+    smartSuggestions: Boolean = true,
+    enabled: Boolean = true,
+    isError: Boolean = false,
+    errorMessage: String? = null
 ) {
     val suggestionEngine = remember { SmartSuggestionEngine() }
     var suggestions by remember { mutableStateOf<SuggestionResult?>(null) }
@@ -45,12 +49,16 @@ fun SmartTextField(
     var isLoading by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(value) {
+    LaunchedEffect(value, smartSuggestions) {
+        isLoading = false
         if (smartSuggestions && value.isNotBlank()) {
             isLoading = true
             delay(300) // Wait for user to stop typing
-            suggestions = suggestionEngine.analyzeText(value)
-            isLoading = false
+            try {
+                suggestions = suggestionEngine.analyzeText(value)
+            } finally {
+                isLoading = false
+            }
         } else {
             suggestions = null
         }
@@ -73,6 +81,15 @@ fun SmartTextField(
                     }
                 },
             singleLine = singleLine,
+            enabled = enabled,
+            isError = isError,
+            supportingText = errorMessage?.let { message -> { Text(message) } },
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.25f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f)
+            ),
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType,
                 imeAction = ImeAction.Done
@@ -99,15 +116,15 @@ fun SmartTextField(
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
-            SmartSuggestionsDropdown(
-                suggestions = suggestions!!,
+            suggestions?.let { result -> SmartSuggestionsDropdown(
+                suggestions = result,
                 onSuggestionSelected = { suggestion ->
                     onValueChange(suggestion)
                     showSuggestions = false
                     focusManager.clearFocus()
                 },
                 onDismiss = { showSuggestions = false }
-            )
+            ) }
         }
     }
 }
@@ -209,7 +226,7 @@ private fun SuggestionItem(
             modifier = Modifier.weight(1f)
         )
         Icon(
-            imageVector = Icons.Default.ArrowForward,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
             contentDescription = "Use suggestion",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(16.dp)

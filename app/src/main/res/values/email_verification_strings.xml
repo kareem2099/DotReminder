@@ -1,0 +1,35 @@
+<resources>
+    <string name="email_verification_title">Email verification</string>
+    <string name="email_verification_entry_hint">Check or confirm your email address</string>
+    <string name="email_verification_heading">A quick check for your email</string>
+    <string name="email_verification_intro">Send a confirmation link to your email, then return here to check your status.</string>
+    <string name="email_verification_address">Your email address</string>
+    <string name="email_verification_send">Send confirmation link</string>
+    <string name="email_verification_sending">Sending link…</string>
+    <string name="email_verification_resend">Resend confirmation link</string>
+    <string name="email_verification_resend_wait">Resend in %1$d s</string>
+    <string name="email_verification_check">I’ve confirmed my email</string>
+    <string name="email_verification_checking">Checking your email…</string>
+    <string name="email_verification_sent">Confirmation link sent. Check your inbox and spam folder.</string>
+    <string name="email_verification_pending">Your email isn’t confirmed yet. Open the link in your inbox, then check again.</string>
+    <string name="email_verification_tip">The link confirms your email address. Your phone verification is separate.</string>
+    <string name="email_verification_done_title">Email confirmed</string>
+    <string name="email_verification_done_intro">Your email address is verified. You’re ready to continue.</string>
+    <string name="email_verification_continue">Continue to reminders</string>
+    <string name="email_verification_back">Back</string>
+    <string name="email_verification_signed_out_title">Sign in to continue</string>
+    <string name="email_verification_signed_out_intro">Sign in to the account whose email you want to confirm.</string>
+    <string name="email_verification_no_email_title">No email address linked</string>
+    <string name="email_verification_no_email_intro">This account doesn’t have an email address to confirm.</string>
+    <string name="email_verification_load_error_title">Couldn’t load your account</string>
+    <string name="email_verification_load_error_intro">Try again to check your current email and verification status.</string>
+    <string name="email_verification_retry">Try again</string>
+    <string name="email_verification_sync_retry">Retry saving status</string>
+    <string name="email_verification_syncing">Saving status…</string>
+    <string name="email_verification_error_network">Check your connection and try again.</string>
+    <string name="email_verification_error_rate_limit">Too many requests. Please wait before trying again.</string>
+    <string name="email_verification_error_check">Couldn’t check your email status. Please try again.</string>
+    <string name="email_verification_error_send">Couldn’t send the confirmation link. Please try again.</string>
+    <string name="email_verification_error_sync">Your email is confirmed, but the status couldn’t be saved to your profile. You can retry.</string>
+    <string name="email_verification_error_account_changed">Your account changed. Check your current account before continuing.</string>
+</resources>

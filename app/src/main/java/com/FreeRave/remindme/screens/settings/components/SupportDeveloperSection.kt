@@ -1,29 +1,15 @@
 package com.FreeRave.remindme.screens.settings.components
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.FreeRave.remindme.R
 
 @Composable
-fun SupportDeveloperSection(
-    onSupportClicked: () -> Unit
-) {
-    Column {
-        Text(
-            text = "Support",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-        )
-        SettingItem(
-            title = "Support Developer",
-            currentValue = "View ads to help",
-            onClick = onSupportClicked
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+fun SupportDeveloperSection(onSupportClicked: () -> Unit) {
+    SettingsSection(stringResource(R.string.settings_support)) {
+        SettingItem(stringResource(R.string.settings_support_developer), stringResource(R.string.settings_support_hint),
+            onSupportClicked, icon = Icons.Outlined.FavoriteBorder)
     }
 }

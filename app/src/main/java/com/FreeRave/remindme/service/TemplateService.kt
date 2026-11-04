@@ -2,7 +2,6 @@ package com.FreeRave.remindme.service
 
 import com.FreeRave.remindme.model.ReminderTemplate
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
@@ -14,9 +13,9 @@ class TemplateService @Inject constructor(private val db: FirebaseFirestore) {
     private val templatesCollection = db.collection("reminder_templates")
 
     suspend fun addTemplate(template: ReminderTemplate): ReminderTemplate {
-        val docRef = templatesCollection.add(template.toMap()).await()
+        val docRef = templatesCollection.document()
         val savedTemplate = template.copy(id = docRef.id)
-        docRef.update("id", docRef.id).await()
+        docRef.set(savedTemplate.toMap() + ("id" to docRef.id)).await()
         return savedTemplate
     }
 
@@ -49,7 +48,7 @@ class TemplateService @Inject constructor(private val db: FirebaseFirestore) {
                 )).await()
             true
         } catch (e: Exception) {
-            Log.e("TemplateService", "Error updating template $template", e)
+            Log.e("TemplateService", "Error updating template", e)
             false
         }
     }
@@ -67,7 +66,6 @@ class TemplateService @Inject constructor(private val db: FirebaseFirestore) {
     fun getTemplates(userId: String): Flow<List<ReminderTemplate>> = callbackFlow {
         val listener = templatesCollection
             .whereEqualTo("userId", userId)
-            .orderBy("name", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     close(e)

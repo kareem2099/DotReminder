@@ -60,7 +60,9 @@ class ReminderService @Inject constructor(private val db: FirebaseFirestore, pri
                     "latitude", reminder.latitude,
                     "longitude", reminder.longitude,
                     "geofenceRadius", reminder.geofenceRadius,
-                    "geofenceTransitionType", reminder.geofenceTransitionType
+                    "geofenceTransitionType", reminder.geofenceTransitionType,
+                    "geofenceDwellTimeMillis", reminder.geofenceDwellTimeMillis,
+                    "geofencePriority", reminder.geofencePriority
                 ).await()
             // Unregister old geofence and register new if location-based
             geofenceService.unregisterGeofence(reminder.id)

@@ -114,13 +114,6 @@ class SettingsViewModel @Inject constructor(
             initialValue = UserPreferencesRepository.NO_DEFAULT_TIME_SET
         )
 
-    val biometricLoginEnabled: StateFlow<Boolean> =
-        userPreferencesRepository.biometricLoginEnabled.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = UserPreferencesRepository.DEFAULT_BIOMETRIC_LOGIN_ENABLED
-        )
-
     val appOpenAdsEnabled: StateFlow<Boolean> =
         userPreferencesRepository.appOpenAdsEnabled.stateIn(
             scope = viewModelScope,
@@ -163,29 +156,8 @@ class SettingsViewModel @Inject constructor(
             initialValue = 0
         )
 
-    // --- Two-Factor Authentication ---
-    val twoFactorAuthEnabled: StateFlow<Boolean> =
-        userPreferencesRepository.twoFactorAuthEnabled.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = UserPreferencesRepository.DEFAULT_TWO_FACTOR_AUTH_ENABLED
-        )
-    
-    // This would hold the temporary secret during setup, cleared afterwards from local prefs
-    // For long-term storage, it should be encrypted or managed by a backend.
-    val currentTwoFactorAuthSecret = MutableStateFlow<String?>(null) // Holds the raw secret for setup
-    val currentTwoFactorAuthOtpAuthUri = MutableStateFlow<String?>(null) // Holds the otpauth:// URI for QR code
-    val generatedBackupCodes = MutableStateFlow<List<String>>(emptyList()) // Holds generated backup codes
-
-
     fun getBiometricAvailability(): BiometricAvailability {
         return biometricAuthManager.getBiometricAvailability(application.applicationContext)
-    }
-
-    fun setBiometricLoginEnabled(isEnabled: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.saveBiometricLoginEnabled(isEnabled)
-        }
     }
 
     fun setAppOpenAdsEnabled(isEnabled: Boolean) {
@@ -284,112 +256,6 @@ class SettingsViewModel @Inject constructor(
             }
              _isDeleting.value = false
             onComplete(success)
-        }
-    }
-
-    // --- Mock 2FA Logic ---
-    private fun generateMock2FASecret(): String {
-        // In a real app, use a proper library like dev.samstevens.totp or a similar Android-compatible one.
-        // This mock generates a 16-character string using Base32-compatible characters.
-        val charPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".toList() // Base32 characters
-        return (1..16)
-            .map { kotlin.random.Random.nextInt(0, charPool.size) }
-            .map(charPool::get)
-            .joinToString("")
-    }
-
-    private fun generateMockBackupCodes(count: Int = 10): List<String> {
-        // Generates simple mock backup codes, e.g., 8-digit numbers formatted with a hyphen
-        return List(count) {
-            val part1 = (1000..9999).random()
-            val part2 = (1000..9999).random()
-            "$part1-$part2"
-        }
-    }
-
-    private fun verifyMockTOTP(secret: String?, code: String): Boolean {
-        // In a real app, use a library to verify the TOTP against the secret.
-        // For improved mock testing, accept any 6-digit code if a secret is present.
-        return !secret.isNullOrEmpty() && code.length == 6 && code.all { it.isDigit() }
-    }
-
-    fun startTwoFactorAuthSetup(): Pair<String?, String?> { // Returns (secret, otpAuthUri)
-        val newSecret = generateMock2FASecret()
-        currentTwoFactorAuthSecret.value = newSecret
-
-        // Use user ID for the otpauth URI, default if blank
-        val userId = authService.getCurrentUserId()
-        val userIdentifier = if (userId.isNotBlank()) userId else "unknown_user"
-        val issuer = "RemindMeApp" // Replace with your app's name
-
-        // Format: otpauth://totp/Issuer:userIdentifier?secret=SECRETKEY&issuer=Issuer
-        // Ensure the userIdentifier is URL encoded if it contains special characters.
-        // For simplicity, direct concatenation is used here.
-        val otpAuthUri = "otpauth://totp/${issuer}:${userIdentifier}?secret=${newSecret}&issuer=${issuer}"
-        currentTwoFactorAuthOtpAuthUri.value = otpAuthUri
-        
-        Log.d("SettingsVM", "Generated OTP Auth URI: $otpAuthUri")
-        return Pair(newSecret, otpAuthUri)
-    }
-
-    fun cancelTwoFactorAuthSetup() {
-        currentTwoFactorAuthSecret.value = null // Clear temporary secret
-        currentTwoFactorAuthOtpAuthUri.value = null // Clear URI
-    }
-
-    fun verifyAndEnableTwoFactorAuth(userInputCode: String, onResult: (success: Boolean, message: String?, backupCodes: List<String>) -> Unit) {
-        val secret = currentTwoFactorAuthSecret.value
-        if (secret == null) {
-            onResult(false, "Setup process not started or secret missing.", emptyList())
-            return
-        }
-
-        if (verifyMockTOTP(secret, userInputCode)) {
-            viewModelScope.launch {
-                userPreferencesRepository.saveTwoFactorAuthEnabled(true)
-                userPreferencesRepository.saveTwoFactorAuthSecret(secret) // Persist locally (ideally encrypted)
-                
-                val backupCodes = generateMockBackupCodes()
-                generatedBackupCodes.value = backupCodes 
-                // In a real app, these codes (or their hashes) would be stored securely on the backend.
-
-                // Simulate updating Firestore
-                val userId = authService.getCurrentUserId()
-                if (userId.isNotBlank()) {
-                    // authService.updateUser2FAStatusInFirestore(userId, true, secret, backupCodes) // Placeholder
-                    Log.d("SettingsVM", "Simulating Firestore update for 2FA: User $userId, Enabled: true, Secret: $secret, BackupCodes: $backupCodes")
-                }
-                // Don't clear currentTwoFactorAuthSecret and URI yet, UI might need them briefly for the backup codes screen.
-                // They will be cleared when the backup codes dialog is dismissed.
-                onResult(true, "2FA enabled successfully. Please save your backup codes.", backupCodes)
-            }
-        } else {
-            onResult(false, "Invalid verification code.", emptyList())
-        }
-    }
-
-    fun disableTwoFactorAuth(userInputCode: String, onResult: (success: Boolean, message: String?) -> Unit) {
-        viewModelScope.launch {
-            val storedSecret = userPreferencesRepository.twoFactorAuthSecret.first() // Get the stored secret
-            if (storedSecret == null) {
-                onResult(false, "2FA is not properly set up or secret is missing.")
-                return@launch
-            }
-
-            if (verifyMockTOTP(storedSecret, userInputCode)) {
-                userPreferencesRepository.saveTwoFactorAuthEnabled(false)
-                // Secret is cleared automatically by saveTwoFactorAuthEnabled(false) in UserPreferencesRepository
-
-                // Simulate updating Firestore
-                val userId = authService.getCurrentUserId()
-                if (userId.isNotBlank()) {
-                    // authService.updateUser2FAStatusInFirestore(userId, false, null) // Placeholder
-                    Log.d("SettingsVM", "Simulating Firestore update for 2FA: User $userId, Enabled: false")
-                }
-                onResult(true, "2FA disabled successfully.")
-            } else {
-                onResult(false, "Invalid verification code. 2FA not disabled.")
-            }
         }
     }
 

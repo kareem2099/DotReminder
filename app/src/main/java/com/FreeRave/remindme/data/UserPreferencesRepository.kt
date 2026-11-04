@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class BiometricLockPreference(val enabled: Boolean = false, val ownerUid: String? = null) {
+    // Old enabled preferences have no owner: keep the session locked until the user authenticates.
+    fun protects(uid: String?) = !uid.isNullOrBlank() && enabled && (ownerUid == null || ownerUid == uid)
+}
+
 // Define the DataStore instance at the top level
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
 
@@ -26,6 +31,7 @@ class UserPreferencesRepository @Inject constructor(@ApplicationContext private 
         val REMEMBER_ME_ENABLED = booleanPreferencesKey("remember_me_enabled") // Added key
         val REMEMBERED_EMAIL = stringPreferencesKey("remembered_email") // Added key
         val BIOMETRIC_LOGIN_ENABLED = booleanPreferencesKey("biometric_login_enabled") // Added key
+        val BIOMETRIC_OWNER_UID = stringPreferencesKey("biometric_owner_uid")
         val TWO_FACTOR_AUTH_ENABLED = booleanPreferencesKey("two_factor_auth_enabled")
         val TWO_FACTOR_AUTH_SECRET = stringPreferencesKey("two_factor_auth_secret")
         val APP_OPEN_ADS_ENABLED = booleanPreferencesKey("app_open_ads_enabled")
@@ -144,45 +150,27 @@ class UserPreferencesRepository @Inject constructor(@ApplicationContext private 
     }
 
     // --- Biometric Login ---
-    val biometricLoginEnabled: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.BIOMETRIC_LOGIN_ENABLED] ?: DEFAULT_BIOMETRIC_LOGIN_ENABLED
-        }
+    val biometricLockPreference: Flow<BiometricLockPreference> = context.dataStore.data.map { preferences ->
+        BiometricLockPreference(preferences[PreferencesKeys.BIOMETRIC_LOGIN_ENABLED] ?: false,
+            preferences[PreferencesKeys.BIOMETRIC_OWNER_UID])
+    }
 
-    suspend fun saveBiometricLoginEnabled(isEnabled: Boolean) {
+    suspend fun saveBiometricLock(uid: String, isEnabled: Boolean) {
+        require(uid.isNotBlank())
         context.dataStore.edit { preferences ->
+            val owner = preferences[PreferencesKeys.BIOMETRIC_OWNER_UID]
+            if (!isEnabled && owner != null && owner != uid) return@edit
             preferences[PreferencesKeys.BIOMETRIC_LOGIN_ENABLED] = isEnabled
+            if (isEnabled) preferences[PreferencesKeys.BIOMETRIC_OWNER_UID] = uid
+            else preferences.remove(PreferencesKeys.BIOMETRIC_OWNER_UID)
         }
     }
 
-    // --- Two-Factor Authentication ---
-    val twoFactorAuthEnabled: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.TWO_FACTOR_AUTH_ENABLED] ?: DEFAULT_TWO_FACTOR_AUTH_ENABLED
-        }
-
-    suspend fun saveTwoFactorAuthEnabled(isEnabled: Boolean) {
+    /** Removes the obsolete local demo flag and secret; real factors live only in Firebase. */
+    suspend fun clearLegacyTwoFactorDemo() {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.TWO_FACTOR_AUTH_ENABLED] = isEnabled
-            if (!isEnabled) {
-                // If disabling 2FA, also clear the secret
-                preferences.remove(PreferencesKeys.TWO_FACTOR_AUTH_SECRET)
-            }
-        }
-    }
-
-    val twoFactorAuthSecret: Flow<String?> = context.dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.TWO_FACTOR_AUTH_SECRET]
-        }
-
-    suspend fun saveTwoFactorAuthSecret(secret: String?) {
-        context.dataStore.edit { preferences ->
-            if (secret != null) {
-                preferences[PreferencesKeys.TWO_FACTOR_AUTH_SECRET] = secret
-            } else {
-                preferences.remove(PreferencesKeys.TWO_FACTOR_AUTH_SECRET)
-            }
+            preferences.remove(PreferencesKeys.TWO_FACTOR_AUTH_ENABLED)
+            preferences.remove(PreferencesKeys.TWO_FACTOR_AUTH_SECRET)
         }
     }
 
@@ -319,7 +307,6 @@ class UserPreferencesRepository @Inject constructor(@ApplicationContext private 
         const val NO_DEFAULT_TIME_SET = -1 // Sentinel value for no default time
         const val DEFAULT_REMEMBER_ME_ENABLED = false // Added default
         const val DEFAULT_BIOMETRIC_LOGIN_ENABLED = false // Added default
-        const val DEFAULT_TWO_FACTOR_AUTH_ENABLED = false
         const val DEFAULT_APP_OPEN_ADS_ENABLED = true
         const val DEFAULT_SESSION_ID = ""
     }

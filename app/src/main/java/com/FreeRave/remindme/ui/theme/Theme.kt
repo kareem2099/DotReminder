@@ -5,6 +5,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.activity.compose.LocalActivity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.graphics.luminance
+import androidx.core.view.WindowCompat
 import com.FreeRave.remindme.data.ThemeSetting
 
 private val LightColorScheme = lightColorScheme(
@@ -13,13 +18,17 @@ private val LightColorScheme = lightColorScheme(
     tertiary = LightTertiary,
     background = LightBackground,
     surface = LightSurface,
+    surfaceVariant = androidx.compose.ui.graphics.Color(0xFFDBE5DE),
     error = LightError,
     onPrimary = LightOnPrimary,
     onSecondary = LightOnSecondary,
     onTertiary = LightOnTertiary,
     onBackground = LightOnBackground,
     onSurface = LightOnSurface,
-    onError = LightOnError
+    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFF404943),
+    onError = LightOnError,
+    outline = androidx.compose.ui.graphics.Color(0xFF707973),
+    outlineVariant = androidx.compose.ui.graphics.Color(0xFFBFC9C2)
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -28,13 +37,17 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = DarkTertiary,
     background = DarkBackground,
     surface = DarkSurface,
+    surfaceVariant = androidx.compose.ui.graphics.Color(0xFF2C322E),
     error = DarkError,
     onPrimary = DarkOnPrimary,
     onSecondary = DarkOnSecondary,
     onTertiary = DarkOnTertiary,
     onBackground = DarkOnBackground,
     onSurface = DarkOnSurface,
-    onError = DarkOnError
+    onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFCAC4D0),
+    onError = DarkOnError,
+    outline = androidx.compose.ui.graphics.Color(0xFF8A938C),
+    outlineVariant = androidx.compose.ui.graphics.Color(0xFF404943)
 )
 
 private val OceanBlueLightColorScheme = lightColorScheme(
@@ -244,9 +257,17 @@ fun RemindMeAppTheme(
         ThemeSetting.CANDY -> if (useDarkTheme) CandyDarkColorScheme else CandyLightColorScheme
     }
 
+    val activity = LocalActivity.current
+    val view = LocalView.current
+    if (!view.isInEditMode && activity != null) SideEffect {
+        WindowCompat.getInsetsController(activity.window, view).apply {
+            isAppearanceLightStatusBars = colorScheme.background.luminance() > 0.5f
+            isAppearanceLightNavigationBars = colorScheme.background.luminance() > 0.5f
+        }
+    }
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = MaterialTheme.typography,
+        typography = AppTypography,
         shapes = MaterialTheme.shapes,
         content = content
     )

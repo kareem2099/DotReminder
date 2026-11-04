@@ -1,75 +1,52 @@
 package com.FreeRave.remindme.service
 
-import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.FreeRave.remindme.model.AuthProvider
+import com.google.firebase.auth.AuthCredential
+import com.FreeRave.remindme.security.mfa.MfaCancelled
 import com.FreeRave.remindme.model.User
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
-import com.facebook.GraphRequest
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
+import com.google.firebase.auth.FacebookAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.FreeRave.remindme.security.awaitAuth
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FacebookSignInOnlyServiceImpl @Inject constructor() : FacebookSignInOnlyService {
+class FacebookSignInOnlyServiceImpl @Inject constructor(private val firebaseAuth: FirebaseAuth) : FacebookSignInOnlyService {
+    private val callbackManager = CallbackManager.Factory.create()
+    override fun getCallbackManager(): CallbackManager = callbackManager
 
-    private val callbackManager: CallbackManager = CallbackManager.Factory.create()
-
-    override fun getCallbackManager(): CallbackManager {
-        return callbackManager
+    override fun requestCredential(activity: ComponentActivity, onCredential: (AuthCredential) -> Unit, onFailure: (Exception) -> Unit) {
+        LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
+            override fun onSuccess(result: LoginResult) { onCredential(FacebookAuthProvider.getCredential(result.accessToken.token)) }
+            override fun onCancel() { onFailure(MfaCancelled()) }
+            override fun onError(error: FacebookException) { onFailure(error) }
+        })
+        LoginManager.getInstance().logInWithReadPermissions(activity, listOf("email", "public_profile"))
     }
 
-    // This 'signIn' method now correctly implements the interface method.
-    override fun signIn(
-        activity: ComponentActivity,
-        onSuccess: (User) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
-            override fun onSuccess(result: LoginResult) {
-                val request = GraphRequest.newMeRequest(result.accessToken) { obj, response ->
-                    if (obj != null) {
-                        try {
-                            val user = User(
-                                id = obj.optString("id", ""), // Facebook User ID
-                                name = obj.optString("name", ""),
-                                email = obj.optString("email", ""),
-                                photoUrl = obj.optJSONObject("picture")
-                                    ?.optJSONObject("data")
-                                    ?.optString("url", "") ?: ""
-                            )
-                            onSuccess(user)
-                        } catch (e: Exception) {
-                            onError("Error parsing Facebook user data: ${e.message}")
-                        }
-                    } else {
-                        val errorMsg = response?.error?.errorMessage ?: "Failed to fetch Facebook user data (unknown error)."
-                        onError(errorMsg)
-                    }
-                }
-                val parameters = Bundle()
-                parameters.putString("fields", "id,name,email,picture.type(large)")
-                request.parameters = parameters
-                request.executeAsync()
+    override suspend fun signIn(activity: ComponentActivity, onSuccess: (User) -> Unit, onFailure: (Exception) -> Unit) {
+        try {
+            val credential = suspendCancellableCoroutine<AuthCredential> { continuation ->
+                requestCredential(activity,
+                    onCredential = { if (continuation.isActive) continuation.resume(it) },
+                    onFailure = { if (continuation.isActive) continuation.resumeWithException(it) })
             }
-
-            override fun onCancel() {
-                onError("Facebook login cancelled.")
-            }
-
-            override fun onError(error: FacebookException) {
-                onError("Facebook login error: ${error.message ?: "Unknown Facebook error"}")
-            }
-        })
-
-        // Trigger the login dialog
-        LoginManager.getInstance().logInWithReadPermissions(
-            activity,
-            // callbackManager, // Not needed here if registerCallback is used above for this specific call
-            listOf("email", "public_profile")
-        )
+            val user = firebaseAuth.signInWithCredential(credential).awaitAuth().user
+                ?: throw IllegalStateException()
+            onSuccess(User(id = user.uid, name = user.displayName.orEmpty(), email = user.email.orEmpty(),
+                photoUrl = user.photoUrl?.toString(), isEmailVerified = user.isEmailVerified, provider = AuthProvider.FACEBOOK))
+        } catch (error: CancellationException) { throw error }
+        catch (error: Exception) { onFailure(error) }
     }
 
     override fun passActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
@@ -78,5 +55,6 @@ class FacebookSignInOnlyServiceImpl @Inject constructor() : FacebookSignInOnlySe
 
     override fun signOut() {
         LoginManager.getInstance().logOut()
+        firebaseAuth.signOut()
     }
 }

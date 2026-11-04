@@ -102,6 +102,6 @@ Open an issue or a pull request against this repository. Keep production credent
 
 ## License
 
-Copyright 2026 FreeRave(kareem).
+Copyright 2026 FreeRave (DotSuite).
 
 Licensed under the [Apache License, Version 2.0](LICENSE).

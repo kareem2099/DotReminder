@@ -1,0 +1,272 @@
+[
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/01-home.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 496866,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/02-add.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 449840,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/03-calendar.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 456014,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/04-assistant.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 463979,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/05-templates.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 423919,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/06-security.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 541288,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/featureGraphic.png",
+    "size": [
+      1024,
+      500
+    ],
+    "bytes": 155407,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/01-home.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 553960,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/01-home.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 553960,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/02-calendar.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 494302,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/02-calendar.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 494302,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/03-add.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 491669,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/03-add.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 491669,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/04-templates.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 470215,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/04-templates.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 470215,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/01-home.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 493186,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/02-add.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 449825,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/03-calendar.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 457505,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/04-assistant.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 467342,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/05-templates.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 431973,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/06-security.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 543772,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/featureGraphic.png",
+    "size": [
+      1024,
+      500
+    ],
+    "bytes": 140526,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/01-home.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 549301,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/01-home.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 549301,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/02-calendar.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 495698,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/02-calendar.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 495698,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/03-add.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 491795,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/03-add.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 491795,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/04-templates.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 479111,
+    "mode": "RGB"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/04-templates.png",
+    "size": [
+      1080,
+      1920
+    ],
+    "bytes": 479111,
+    "mode": "RGB"
+  }
+]

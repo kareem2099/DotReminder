@@ -50,3 +50,7 @@ app/release/
 
 # Crash reports
 crashlytics-build.properties
+
+# Generated store artwork previews (published PNGs live in fastlane/metadata).
+/marketing/google-play/preview/
+/marketing/google-play/vectors/

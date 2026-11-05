@@ -1,0 +1,122 @@
+[
+  {
+    "file": "fastlane/metadata/android/ar/images/featureGraphic.png",
+    "sha256": "c6a2ea231566b2147e51b70713b82764f896116a559ae7dc62deface53ce0e00"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/01-home.png",
+    "sha256": "dc8880489f363dc6f5c6d77196bfb3a423b0973f8398a1903eee1bdfeabe48b0"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/02-add.png",
+    "sha256": "3b13151089f0ed8ad5e1deea36c944c1a4ed31c25ce44792be7f5330a5992e8f"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/03-calendar.png",
+    "sha256": "e10bf3870952b37957ecb8588f16898ebfbcaf7ec40a822b95e14df3a28a993f"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/04-assistant.png",
+    "sha256": "72bf7f087955d2121e6d3e01ff1aa30de76b500acbfaadc179c63f5083e694d3"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/05-templates.png",
+    "sha256": "6008143c6f2740b5b456a86e98353c0f4327b55180a6e233acd963cb3020d07e"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/phoneScreenshots/06-security.png",
+    "sha256": "c31d055f1e662d16cca5bf1109a7f0d6bd5a2831b49374d9c1d10d1604e7fcf4"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/01-home.png",
+    "sha256": "744d269fd2a92cba699fd5745c3725138258b3cc250f977bc4641551eb25a535"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/02-calendar.png",
+    "sha256": "dc481a93c6036bedc7c25dbca25120afc2ff497e410551f974764069a14ea4fd"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/03-add.png",
+    "sha256": "7972e1b787505b65e0fe52bf586b4fd7a7dbee46de3a771c889c9a962ea6d129"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/sevenInchScreenshots/04-templates.png",
+    "sha256": "111e0fe3282f7c3c1e35acca8a3791c329cc375025fedf686f4eeed21bcd32e0"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/01-home.png",
+    "sha256": "744d269fd2a92cba699fd5745c3725138258b3cc250f977bc4641551eb25a535"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/02-calendar.png",
+    "sha256": "dc481a93c6036bedc7c25dbca25120afc2ff497e410551f974764069a14ea4fd"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/03-add.png",
+    "sha256": "7972e1b787505b65e0fe52bf586b4fd7a7dbee46de3a771c889c9a962ea6d129"
+  },
+  {
+    "file": "fastlane/metadata/android/ar/images/tenInchScreenshots/04-templates.png",
+    "sha256": "111e0fe3282f7c3c1e35acca8a3791c329cc375025fedf686f4eeed21bcd32e0"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/featureGraphic.png",
+    "sha256": "bc6ca6876ba20668b306d803f837049974fd1182f0c4a6889924009bdd25c726"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/01-home.png",
+    "sha256": "e4854e2991df0cd764c04ecc7d8237d744bc1177fe45adce1a57a9ddc22724f7"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/02-add.png",
+    "sha256": "7009da4604814692c210564845ba67574ff8fff01745d5eb66a63677689bcd60"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/03-calendar.png",
+    "sha256": "c56287f229a03b3fd016618eacce3f561a661c1d8dd0728a55966ad2e79d543b"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/04-assistant.png",
+    "sha256": "0734848bb7443055b64767a3fad90b55def3820d2a99292f0d3969ed72a3a105"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/05-templates.png",
+    "sha256": "a3fb126db559f44882d732f10abac19d9af28c7cc15485c53d818c39d103b99c"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/phoneScreenshots/06-security.png",
+    "sha256": "b89dbad7a793b59db6428395c87c6b1dddb490fe53ee6375a532331fb3d12f78"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/01-home.png",
+    "sha256": "4171eccd558896fac9c40ce35a4445098fbec74eb6706a530ca88c2d2ee1cb41"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/02-calendar.png",
+    "sha256": "71045b29da1223ea2aac7dc4f27c57ad22320cf8506b02e5bb84571ef7c5eb2e"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/03-add.png",
+    "sha256": "ef3309ffee2e9cb7745150aafa4f62e1bac9643efea3e14b2c2e1de156642d55"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/sevenInchScreenshots/04-templates.png",
+    "sha256": "3b928f3df4772d7de87445c0eb6f81a621f09a76436fcd618e6b299761d934e7"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/01-home.png",
+    "sha256": "4171eccd558896fac9c40ce35a4445098fbec74eb6706a530ca88c2d2ee1cb41"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/02-calendar.png",
+    "sha256": "71045b29da1223ea2aac7dc4f27c57ad22320cf8506b02e5bb84571ef7c5eb2e"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/03-add.png",
+    "sha256": "ef3309ffee2e9cb7745150aafa4f62e1bac9643efea3e14b2c2e1de156642d55"
+  },
+  {
+    "file": "fastlane/metadata/android/en-US/images/tenInchScreenshots/04-templates.png",
+    "sha256": "3b928f3df4772d7de87445c0eb6f81a621f09a76436fcd618e6b299761d934e7"
+  }
+]

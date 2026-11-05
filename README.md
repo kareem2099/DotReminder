@@ -19,6 +19,17 @@ A reminder app for Android built with Kotlin, Jetpack Compose and Firebase.
 The Settings screen displays the version name and code from the build configuration.
 Targeting Android 16 does not raise the minimum supported Android version.
 
+## Screenshots
+
+<p>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-home.png" alt="Reminder overview" width="30%" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-calendar.png" alt="Calendar and scheduled reminders" width="30%" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-assistant.png" alt="AI conversation and a reminder draft for review" width="30%" />
+</p>
+
+These screenshots use demonstration data. The [store artwork sources](marketing/google-play/README.md)
+include Arabic and English captions, phone/tablet images and localized listing text.
+
 ## Features
 
 - Time-based and recurring reminders, custom sounds, vibration and snooze.

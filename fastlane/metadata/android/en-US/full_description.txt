@@ -1,0 +1,30 @@
+A clearer day. A little less to keep in your head.
+
+DotReminder by DotSuite brings your reminders, calendar and reusable routines together in a clean glass interface.
+
+MAKE EACH REMINDER YOURS
+• Choose a date and time, then add a title, notes and a category.
+• Repeat daily, weekly or at an interval you choose.
+• Personalize sound and vibration, and snooze when you need a little more time.
+• Add an optional location for place-based reminders.
+
+SEE WHAT IS AHEAD
+• Browse, search and filter your reminders by category or status.
+• Plan upcoming days in the calendar.
+• Organize categories with colors and icons, and save templates for tasks you repeat.
+• Choose a light or dark appearance and sync saved account data after signing in.
+
+AI HELP, WITH YOU IN CONTROL
+Describe what you want to remember in your own words. The optional assistant can suggest a reminder draft; review and edit the title, time and details before saving. AI needs an internet connection and can misunderstand a request.
+
+YOUR ACCOUNT, YOUR CONTROL
+• Sign in with email, Google or Facebook.
+• SMS code verification during email-and-phone registration.
+• Authenticator-based two-step verification for eligible accounts.
+• Biometric app lock for your signed-in session on supported devices.
+• Clear links to privacy, support and account/associated-data deletion requests.
+
+Allow notifications and exact alarms when requested so reminders can work as intended. Device power settings, Do Not Disturb and location permissions can affect alerts or sound. Includes ads.
+
+Support: support@dotsuite.dev
+Privacy and account deletion: https://dotsuite.dev/en/privacy#dotreminder

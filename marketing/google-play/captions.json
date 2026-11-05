@@ -1,0 +1,62 @@
+{
+  "home": {
+    "en-US": [
+      "Make space\nfor your day.",
+      "Your reminders, clearly organized."
+    ],
+    "ar": [
+      "يومك أوضح.\nوتذكيراتك أقرب.",
+      "كل تذكيراتك في مكان واحد."
+    ]
+  },
+  "add": {
+    "en-US": [
+      "Set the time.\nKeep the details.",
+      "Time, repeats, notes and categories."
+    ],
+    "ar": [
+      "حدّد الموعد.\nورتّب التفاصيل.",
+      "وقت وتكرار وملاحظات تناسب يومك."
+    ]
+  },
+  "calendar": {
+    "en-US": [
+      "See what’s\nahead.",
+      "Plan your days with the calendar."
+    ],
+    "ar": [
+      "خطّط\nللأيام القادمة.",
+      "نظرة واحدة على مواعيدك."
+    ]
+  },
+  "assistant": {
+    "en-US": [
+      "Say it.\nSet a reminder.",
+      "AI drafts you review before saving."
+    ],
+    "ar": [
+      "اكتبها\nبطريقتك.",
+      "راجع اقتراح المساعد قبل الحفظ."
+    ]
+  },
+  "templates": {
+    "en-US": [
+      "Your routines.\nReady to reuse.",
+      "Save templates for repeated tasks."
+    ],
+    "ar": [
+      "روتينك،\nبخطوة أقل.",
+      "قوالب لتذكيراتك المتكررة."
+    ]
+  },
+  "security": {
+    "en-US": [
+      "Your account.\nYour control.",
+      "Biometric app lock and account security."
+    ],
+    "ar": [
+      "حسابك،\nتحت سيطرتك.",
+      "قفل بالبصمة وإعدادات أمان واضحة."
+    ]
+  }
+}

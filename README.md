@@ -49,6 +49,7 @@ include Arabic and English captions, phone/tablet images and localized listing t
 - Support: [support@dotsuite.dev](mailto:support@dotsuite.dev).
 - [Privacy policy](https://dotsuite.dev/en/privacy).
 - [Request DotReminder account and associated data deletion](https://dotsuite.dev/en/privacy#delete-dotreminder).
+- [DotReminder terms of use](https://dotsuite.dev/en/dotreminder/terms), with English, Arabic, German, French and Russian versions. The [canonical terms documents](docs/legal/README.md) live in this repository.
 - The web policy/request page is available in English, Arabic, German, French and Russian using `/en/`, `/ar/`, `/de/`, `/fr/` and `/ru/`.
 
 The deletion pathway prepares an email request; opening a page or mail draft does not delete anything. Support verifies account ownership and processes verified requests within 30 days. The scope includes the Firebase account, profile, reminders and saved locations, categories, templates and device-session records. See [the fulfillment procedure](docs/account-deletion.md) for local copies and provider-retention details.
